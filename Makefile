@@ -23,8 +23,10 @@ INSTALL=cp
 INSTALLFLAGS=-p
 BIN_DIR=$(TOPOROOT)/bin
 
+all:	rgb.h $(PROGS) 
 
-all:	$(PROGS)
+rgb.h:
+	 ./rgb2c.pl X11/etc/rgb.txt  > rgb.h
 
 sxwd:	sxwd.o xwd.o ppm.o font.o
 	$(CC) $(LDFLAGS) $(XLDFLAGS) -o sxwd sxwd.o xwd.o font.o ppm.o $(XLIBS) $(LIBS)
@@ -32,9 +34,8 @@ sxwd:	sxwd.o xwd.o ppm.o font.o
 install:	$(PROGS)
 	$(INSTALL) $(INSTALLFLAGS) sxwd $(BIN_DIR)
 
-
 clean:
-	$(RM) $(OBJS) *% ,* *.o *.BAK *.CKP core $(PROGS)
+	$(RM) $(OBJS) *% ,* *.o rgb.h *.BAK *.CKP core $(PROGS)
 
 .INIT:	$(SRCS)
 
