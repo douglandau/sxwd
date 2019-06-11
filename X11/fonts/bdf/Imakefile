@@ -1,0 +1,8 @@
+XCOMM $Xorg: Imakefile,v 1.3 2000/08/17 19:42:52 cpqbld Exp $
+#define IHaveSubdirs
+#define PassCDebugFlags /* as nothing */
+
+        SUBDIRS = misc 75dpi 100dpi
+
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
