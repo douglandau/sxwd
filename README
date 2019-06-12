@@ -3,72 +3,61 @@
 Sooper-xwd
 
 
-I   Overview
+Sxwd is a utility for inspecting and modifying 8-bit psuedocolor (palleted)
+XWD images.  It was initially written to deal with colormap issues, for 
+example to dump the RGB values, identify/purge duplicate colors, trim or
+truncate the colormap, identify the location of black and white, etc. 
+Therefore basic operation is:
 
-Sxwd is a swiss army knife for dealing with xwd images.  Xwd is a
-C++ class which was created by merging xwd.c and xwud.c from the
-X11R6 distribution and porting them to g++.  Sxwd is a command line
-wrapper to exercise the member functions of xwd.
-
-A few additional features have been added.  Line drawing was taken
-from "Computer Graphics: Principles and Practice" by Foley and Van Dam 
-and text rendering was taken from ppmcaption-1.0 by Jamie Zawinski. 
-
-
-
-II  Building
-
-% xmkmf
-% make
-% make install
+$ sxwd -in white8.xwd -cmap    
+$ sxwd -in white8.xwd -check    
+$ sxwd -in white8.xwd -header
+$ sxwd -in white8.xwd -addColor DarkSlateBlue -write
+$ sxwd -in white8.xwd -check -c16
 
 
-III  Options
+Many images use less than 256 colors but most programs seem to want to 
+write a full 256 cells: 
 
-Sooper-xwd adds the following options:
--bg		Sets the background for drawing operations
--blackPixel	Sets blackPixel to this value
--border		Sets the border width
--check		Prints colormap details including # of entries
--c16		Dumps first 16 entries of colormap
--cmap		Dumps colormap
--fg		Sets the foreground for drawing operations
--getCell	Dump the values of a colorcell
--debug		Turns on debug mode
--gz		Gzip output
--header		Dump the image header.
--image		Dump the image 
--in		Specify the image name
--line		Draw a line from X0,Y0 to X1,Y1
--patch		apply a smaller image as a patch at X,Y
--path		Specify the path to the image
--pen		Sets the pen width for drawing operations
--scale		Scale and image by factor of <scale> 
--shrink		Shrinkwrap an image, that is, remove any solid color border
--squish		Make a colormap smaller by removing duplicate colors
--setCell	Force the values of a colorcell
--trunc		Truncates colormap to <ncolors> entries
--use4		Replace data with 4-bit data
--use8		Replace data with 8-bit data
--verbose	Turns on verbose mode
--whitePixel	Sets blackPixel to this value
--x		Set the upper lefthand X for graphics operations
--x0		Set the upper lefthand X for graphics operations
--y		Set the upper lefthand Y for graphics operations
--y0		Set the upper lefthand Y for graphics operations
--debug		Turns on debug mode
+$ wget http://cloud.insideidaho.org/data/imageryBaseMapsEarthCover/topographicMaps/drg_24k_idaho/46/drg24k_46114a1_usgs.tif
+$ mv drg24k_46114a1_usgs.tif o46114a1.tif
+$ convert o46114a1.tif o46114a1.xwd
+$ sxwd -in o46114a1.xwd -check
+$ sxwd -in o46114a1.xwd -cmap
+$ sxwd -in o46114a1.xwd -c16
+
+We can recover the cells:
+
+$ sxwd -in o46114a1.xwd -over15
+$ sxwd -in o46114a1.xwd -trunc 16 -write
+$xwd -in o46114a1.xwd -check -c16
+
+
+If we have two images we wish to combine, we could concatenate their
+colormaps together blindly, we could merge them or attempt to merge them,
+or we could remap the colors in one of them to those in the other.
+
+$ ./sxwd -in o38119h8.xwd -patch doug.xwd -x 100 -y 100 -write
+$ ./sxwd -in o38119h8.xwd -patchCentered doug.xwd -x 100 -y 100 -write
+$ ./sxwd -in o38119h8.xwd -mapTo o38119a1.xwd -write
+
+Some other basic features include getting and setting pixels, drawing 
+lines and rectangles, clipping and resizing.  These are barebones;
+there is no pen thickness and no anti-aliasing, the latter leaving the 
+-scale option useless.
+
+
+Lettering was added make banner images more quickly than with mogrify:
+
+$ cp white8.xwd w.xwd
+$ ./sxwd -in w.xwd -resize 5000 1000 -set -write
+$ ./sxwd -in w.xwd -fontPath /opt/source/sxwd/X11/fonts/bdf -fontDPI misc -font 7x14 -x 100 -y 100 -alignment Left -text "This is the 7x14 font"   -write
 
 
 
-IV   Examples:
+Line drawing is from "Computer Graphics: Principles and Practice", Foley and Van Dam 
+Text rendering is from ppmcaption-1.0 courtesy of Jamie Zawinski. 
 
-./sxwd -in o37122g4.200.xwd -check
-./sxwd -in o37122g4.200.xwd.gz -check
-./sxwd -in o37122g4.200.xwd.gz -check -c16
-./sxwd -in o37122g4.200.xwd.gz -check -cmap
-./sxwd -in o32114h5.200.xwd -map o37122g4.200.xwd -write
-./sxwd -in elle.xwd -use4 -out elle16.xwd
-./sxwd -in elle16.xwd -use8 -out elle256.xwd
 
 
 
