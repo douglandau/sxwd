@@ -3,7 +3,7 @@
 Sooper-xwd
 
 
-Sxwd is a utility for inspecting and modifying 8-bit psuedocolor (palleted)
+Sxwd is a utility for inspecting and modifying 8-bit pseudocolor (paletted)
 XWD images.  It was initially written to deal with colormap issues, for 
 example to dump the RGB values, identify/purge duplicate colors, trim or
 truncate the colormap, identify the location of black and white, etc. 
