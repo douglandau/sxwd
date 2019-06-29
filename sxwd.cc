@@ -534,6 +534,7 @@ int main (int argc, char **argv) {
 		if (strcasecmp(argv[i], "-x") == 0) {
 		    if (++i >= argc) usage("");
 		    x = atoi(argv[i]); 
+			continue;
 		}
 		if (strcasecmp(argv[i], "-y") == 0) {
 		   if (++i >= argc) usage("");
