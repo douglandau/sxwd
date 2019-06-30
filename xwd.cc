@@ -747,7 +747,6 @@ int xwd::Fill (int x1, int y1, int x2, int y2) {
 
 //  Crop clips the image to the specified rect
 int xwd::Crop (int x1, int y1, int x2, int y2) {
-   XImage *newimg;
    unsigned long pix;
    int newWidth, newHeight;
    register int x, y;
@@ -755,14 +754,26 @@ int xwd::Crop (int x1, int y1, int x2, int y2) {
 
    //  first, put the corners in the correct order
    //  x1, x2 is the northwest corner, x2, y2 is the southeast
-   if (x1 > x2) { int swap = x1; x1 = x2; x2 = swap; }
-   if (y1 > y2) { int swap = y1; y1 = y2; y2 = swap; }
+   //if (x1 > x2) { int swap = x1; x1 = x2; x2 = swap; }
+   //if (y1 > y2) { int swap = y1; y1 = y2; y2 = swap; }
 
-   //  check bounds
-   x1 = max(x1,0); 	x2 = min(x2,image->width-1);
-   y1 = max(y1,0); 	y2 = min(y2,image->height-1);
 
-   // set up distances
+   // if x1 == image->width, this comes from TrimLeft(); nothing to trim
+   if (x1 > image->width-1) return 1;
+   // if x2 == -1, this probably comes from TrimRight(); nothing to trim
+   if (x2 < 0) return 1;
+   // if y1 == image->height, this comes from TrimTop(); nothing to trim
+   if (y1 > image->height-1) return 1;
+   // if y2 == -1, this comes from TrimBottom(); nothing to trim
+   if (y2 < 0) return 1;
+
+   // these out-of-bounds cases should probably also be ignored
+   if (x1<0) return 1;
+   if (x2>image->width-1) return 1;
+   if (y1<0) return 1;
+   if (y2>image->height-1) return 1;
+
+   // set up distances.  Add one to operate inclusively
    newWidth = (x2 - x1) + 1; 	newHeight = (y2 - y1) + 1;
 
    //newimg = new XImage;
@@ -772,7 +783,6 @@ int xwd::Crop (int x1, int y1, int x2, int y2) {
    for (y=0; y < newHeight ; y++) {
       for (x = 0; x < newWidth; x++) {
          pix = GetPixel (x + x1, y + y1);
-         //pix = img->data[(y1+y)*newWidth)+x] = pix;
          newdata[(y*newWidth)+x] = pix;
       }
    }
@@ -993,7 +1003,10 @@ void xwd::DumpHeader () {
 }
 
 
-//  Dump the pixwl values
+//
+//  Dump() 
+//  Dump the pixel values
+//
 void xwd::Dump () {
 	for (int x=0; x < image->width; x++) {
 		for (int y=0; y < image->height; y++) {
@@ -1028,30 +1041,124 @@ void xwd::DrawString(char *text, int x, int y, int alignment) {
 }
 
 //
+//  TrimLeft() trims an image on which a string has been drawn
+//  by looking for solid color at the left edge to remove
+//
+void xwd::TrimLeft() {
+	Bool allsame=True;
+	int lineno = 0;
+
+	while (allsame && (lineno < image->width)) {
+		Pixel last = GetPixel(lineno,0);
+   	for (int y=0; (y<image->height-1) && allsame; y++) {
+			allsame = GetPixel(lineno,y) == last;
+   	}
+      // Crop() will crop inclcusively, so if we give it 0,0,width-1,hight-1,
+      // the image should be unchanged.
+      // This line below will leave the left value at image->width, which is
+      // not actually on the image, if no column of pixels should be trimmed.  
+		if (allsame) lineno++;
+	}
+ 	if (verbose) 
+      printf ("%s: can be trimmed down to %dx%d\n", 
+                        name, image->width-(lineno+1),image->height);
+   if ((lineno > 0) && (lineno < image->width))
+   	Crop(lineno,0,image->width-1,image->height-1);
+}
+
+//
 //  TrimRight() trims an image on which a string has been drawn
 //  by looking for solid color at the right edge to remove
 //
-void xwd::Trim() {
+void xwd::TrimRight() {
 
 	Bool allsame=True;
+	int lineno = image->width-1;
 
-	int lineno = image->width - 1;
-
-	while (allsame && lineno > 0) {
+	while (allsame && (lineno > -1)) {
 		Pixel last = GetPixel(lineno,0);
-   	for (int y=0; y<image->height && allsame; y++) {
+   	for (int y=0; (y<image->height-1) && allsame; y++) {
 			allsame = GetPixel(lineno,y) == last;
    	}
+      // Crop() will crop inclcusively, so if we give it 0,0,width-1,hight-1,
+      // the image should be unchanged.
+      // This line below will leave lineno at -1 if no column shoud be trimmed
 		if (allsame) lineno--;
 	}
- 	if (verbose) printf ("%s: can be trimmed down to %d wide\n", name, lineno);
+ 	if (verbose) 
+      printf ("%s: can be trimmed down to %dx%d\n",name,lineno+1,image->height);
    if (lineno < (image->width -1)) {
-   	Crop(0,0,lineno,image->height);
+   	Crop(0,0,lineno,image->height-1);
 	}
 }
 
+//
+//  TrimTop() trims an image on which a string has been drawn
+//  by looking for solid color at the right edge to remove
+//
+void xwd::TrimTop() {
+	Bool allsame=True;
+	int lineno = 0;
 
-//  Sets the specified pixel to the specified pixel value
+	while (allsame && (lineno < image->height)) {
+		Pixel last = GetPixel(0,lineno);
+   	for (int x=0; (x<image->width-1) && allsame; x++) {
+			allsame = GetPixel(x,lineno) == last;
+   	}
+      // Crop() will crop inclcusively, so if we give it 0,0,width-1,hight-1,
+      // the image should be unchanged.
+      // this loop could leave lineno at image->height, in other words
+      // pointing one past the bottom row, if no row should be trimmed
+		if (allsame) lineno++;
+	}
+ 	if (verbose) 
+      printf ("%s: can be trimmed down to %dx%d\n", 
+                                 name, image->width, image->height-lineno);
+   if (lineno > 0)
+   	Crop(0,lineno,image->width-1, image->height-1);
+}
+
+//
+//  TrimBottom() trims an image on which a string has been drawn
+//  by looking for solid color at the bottom edge to remove
+//
+void xwd::TrimBottom() {
+	Bool allsame=True;
+	int lineno = image->height-1;
+
+	while (allsame && (lineno > 0)) {
+		Pixel last = GetPixel(0,lineno);
+   	for (int x=0; (x<image->width-1) && allsame; x++) {
+			allsame = GetPixel(x, lineno) == last;
+   	}
+      // Crop() will crop inclcusively, so if we give it 0,0,width-1,hight-1,
+      // the image should be unchanged.
+      // this loop will leave lineno at -1 if no row should be trimmed
+		if (allsame) lineno--;
+	}
+ 	if (verbose) 
+      printf ("%s: can be trimmed down to %dx%d\n", name, lineno);
+   if (lineno < (image->height-1))
+   	Crop(0,0,image->width-1,lineno);
+}
+
+//
+//  Trim() trims an image on the right, left, top, and bottom
+//  by looking for lines of solid color which can be removed
+//
+void xwd::Trim() {
+   	TrimLeft();
+   	TrimRight();
+   	TrimTop();
+   	TrimBottom();
+}
+
+
+
+//
+//  PutPixel()
+//  PutPixel sets the specified pixel to the specified value
+//
 void xwd::PutPixel (register int x, register int y, Pixel pix) {
 
    if (debug) fprintf (stderr, "PutPixel:  putting %lu at %d,%d\n", pix, x, y);
@@ -1072,6 +1179,10 @@ void xwd::PutPixel (register int x, register int y, Pixel pix) {
 }
 
 
+//
+//  GetPixel()
+//  GetPixel gets the value of the specified pixel 
+//
 //  Sets the specified pixel to the specified pixel value
 Pixel xwd::GetPixel (register int x, register int y) {
     if ((x<0) || (x>=image->width) || (y<0) || (y>=image->height)) return 0;
