@@ -36,6 +36,11 @@ class xwd {
 		int 		Fill (int, int, int, int);
 		void 		Clear ();
 		void 		Set ();
+		void 		Trim();
+		void 		TrimLeft();
+		void 		TrimRight();
+		void 		TrimTop();
+		void 		TrimBottom();
 		void 		DumpHeader ();
 		void 		DumpImage ();
 		void 		DumpLine (int line=0);
@@ -70,7 +75,6 @@ class xwd {
 		void 		DrawRect (int, int, int, int);
 		unsigned	ImageSize ();
 		void 		DrawString(char *text, int x, int y, int alignment);
-		void 		Trim();
 		Pixel 	GetPixel (register int x, register int y);
 		void 		PutPixel (register int x, register int y, Pixel pix);
 	

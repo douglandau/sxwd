@@ -63,6 +63,10 @@ void usage(const char *msg) {
     fprintf(stderr, "           [-swapBW] \n");
     fprintf(stderr, "           [-text sometext] \n");
     fprintf(stderr, "           [-trim] \n");
+    fprintf(stderr, "           [-trimLeft] \n");
+    fprintf(stderr, "           [-trimRight] \n");
+    fprintf(stderr, "           [-trimTop] \n");
+    fprintf(stderr, "           [-trimBottom] \n");
     fprintf(stderr, "           [-use4] \n");
     fprintf(stderr, "           [-use8] \n");
     fprintf(stderr, "           [-verbose] \n");
@@ -502,8 +506,23 @@ int main (int argc, char **argv) {
 			continue;
 		}
 		if (strcasecmp(argv[i], "-trim") == 0) {
-		   trim = True; 	
 	    	in->Trim(); 
+			continue;
+		}
+		if (strcasecmp(argv[i], "-trimLeft") == 0) {
+	    	in->TrimLeft(); 
+			continue;
+		}
+		if (strcasecmp(argv[i], "-trimRight") == 0) {
+	    	in->TrimRight(); 
+			continue;
+		}
+		if (strcasecmp(argv[i], "-trimTop") == 0) {
+	    	in->TrimTop(); 
+			continue;
+		}
+		if (strcasecmp(argv[i], "-trimBottom") == 0) {
+	    	in->TrimBottom(); 
 			continue;
 		}
 		if (strcasecmp(argv[i], "-use4") == 0) {
