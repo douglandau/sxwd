@@ -163,7 +163,7 @@ int xwd::ShowFonts () {
     if (fontPath)
     	ListPath(fontPath);
 	else
-    	ListPath("");
+    	ListPath((char *)"");
     return 0;
 }
 
@@ -409,6 +409,7 @@ int xwd::lsColors () {
 	for (i=0; i<NumRGBs(); i++) {
 		printf ("%3d %3d %3d\t%s\n", rgbs[i].r,rgbs[i].g,rgbs[i].b,rgbs[i].name);
 	}   
+   return NumRGBs();
 }
 
 
@@ -642,6 +643,7 @@ int xwd::SquishCmap () {
       }
     }
     }
+   return 0;
 }
 
 int xwd::DrawLines (char *linesName) {
@@ -693,6 +695,7 @@ int xwd::DrawLines (char *linesName) {
 	DrawLine (theLines[lineNo].x0, theLines[lineNo].y0,
 		theLines[lineNo].x1, theLines[lineNo].y1);
     }
+   return 0;
 }
 
 //
@@ -744,47 +747,47 @@ int xwd::Fill (int x1, int y1, int x2, int y2) {
 
 //  Crop clips the image to the specified rect
 int xwd::Crop (int x1, int y1, int x2, int y2) {
-    XImage *newimg;
-    unsigned long pix;
-    int dx, dy;
-    register int x, y;
+   XImage *newimg;
+   unsigned long pix;
+   int newWidth, newHeight;
+   register int x, y;
+   char *newdata;
 
-    //  first, put the corners in the correct order
-    //  x1, x2 is the northwest corner, x2, y2 is the southeast
-    if (x1 > x2) { int swap = x1; x1 = x2; x2 = swap; }
-    if (y1 > y2) { int swap = y1; y1 = y2; y2 = swap; }
+   //  first, put the corners in the correct order
+   //  x1, x2 is the northwest corner, x2, y2 is the southeast
+   if (x1 > x2) { int swap = x1; x1 = x2; x2 = swap; }
+   if (y1 > y2) { int swap = y1; y1 = y2; y2 = swap; }
 
-    //  check bounds
-    x1 = max(x1,0); 	x2 = min(x2,image->width);
-    y1 = max(y1,0); 	y2 = min(y2,image->height);
+   //  check bounds
+   x1 = max(x1,0); 	x2 = min(x2,image->width-1);
+   y1 = max(y1,0); 	y2 = min(y2,image->height-1);
 
-    // set up distances
-    dx = (x2 - x1) + 1; 	dy = (y2 - y1) + 1;
+   // set up distances
+   newWidth = (x2 - x1) + 1; 	newHeight = (y2 - y1) + 1;
 
-    newimg = new XImage;
-    memcpy (newimg, image, sizeof(XImage));
+   //newimg = new XImage;
+   newdata = new char [newWidth * newHeight];
+   memset (newdata, 0, newWidth * newHeight);
 
-    newimg->bytes_per_line = newimg->width = dx;
-    newimg->height = dy;
-    newimg->data = new char[dx * dy];
+   for (y=0; y < newHeight ; y++) {
+      for (x = 0; x < newWidth; x++) {
+         pix = GetPixel (x + x1, y + y1);
+         //pix = img->data[(y1+y)*newWidth)+x] = pix;
+         newdata[(y*newWidth)+x] = pix;
+      }
+   }
+   image->width = newWidth;
+   image->height = newHeight;
+   image->bytes_per_line = newWidth;
+   header->pixmap_width = (CARD32) newWidth;
+   header->pixmap_height = (CARD32) newHeight;
+   header->window_width = (CARD32) newWidth;
+   header->window_height = (CARD32) newHeight;
+   header->bytes_per_line = (CARD32) newWidth;
 
-    for (y=0; y < dy ; y++) {
-        for (x = 0; x < dx; x++) {
-            pix = GetPixel (x + x1, y + y1);
-            newimg->data[y*newimg->width+x] = pix;
-        }
-    }
-    header->pixmap_width = (CARD32) dx;
-    header->pixmap_height = (CARD32) dy;
-    header->window_width = (CARD32) dx;
-    header->window_height = (CARD32) dy;
-    header->bytes_per_line = (CARD32) newimg->bytes_per_line;
-    header->bits_per_pixel = (CARD32) newimg->bits_per_pixel;
-
-    delete image->data;
-    delete image;
-    image = newimg;
-    return 0;
+   delete image->data;
+   image->data = newdata;
+   return 0;
 }
 
 //
@@ -1041,10 +1044,10 @@ void xwd::Trim() {
    	}
 		if (allsame) lineno--;
 	}
-   //if (allsame) {
-   	//crop(0,0,image->width-1,image->height)
-	//}
  	if (verbose) printf ("%s: can be trimmed down to %d wide\n", name, lineno);
+   if (lineno < (image->width -1)) {
+   	Crop(0,0,lineno,image->height);
+	}
 }
 
 
