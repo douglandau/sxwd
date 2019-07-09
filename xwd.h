@@ -50,6 +50,7 @@ class xwd {
 		int 		WriteXWD ();
 		void 		DumpCmap(int cells=255);
 		int 		SquishCmap();
+		int 		TruncCmap(int);
 		int 		SetWhitePixel(Pixel);
 		int 		SetBlackPixel(Pixel);
 		int 		SwapBW();
@@ -65,8 +66,8 @@ class xwd {
 		Pixel 	GetColor (char *);
 		int 		ReadRGB (char *colorname, int *r, int *g, int *b);
 		int 		FindRGBByName (char *);
-		int 		NumRGBs ();
-		int 		lsColors();
+		static	int 		NumRGBs ();
+		static   int 		lsColors();
 		void 		MergeCmap(xwd *intoMe);
 		void 		MapTo(xwd *toMe);
 		void 		DrawBorder (const char *borderName);
@@ -97,7 +98,7 @@ class xwd {
 		XWDFileHeader 	*header;
 		XColor 			*colors;
 		int 				ncolors;
-		Bool 				debug, verbose, writeGzipped;
+		Bool 				debug=False, verbose=False, writeGzipped;
 		unsigned long	whitePixel, blackPixel, fg, bg, penWidth;
 	
 	private:

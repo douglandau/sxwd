@@ -33,6 +33,7 @@ xwd::xwd (const char *in_name) {
     fontDPI = new char[256]; 
     sprintf (fontDPI, "misc");
     ReadXWD(0);
+    verbose = 0;
 }
 
 //
@@ -383,8 +384,7 @@ int xwd::ReadRGB (char *ofMe, int *r, int *g, int *b) {
 
 //  numRGB returns the enumber of RGB specifications in our table
 int xwd::NumRGBs () {
-	if (debug) 
-		printf ("number of rgbs = %d / %d \n", sizeof(rgbs) , sizeof(rgbSpec));
+	//if (verbose) fprintf (stderr, "number of rgbs = %d / %d \n", sizeof(rgbs) , sizeof(rgbSpec));
  	return sizeof(rgbs) / sizeof(rgbSpec);
 }
 
@@ -565,6 +565,40 @@ int xwd::SetForeground (char *colorname) {
 int xwd::SetBackground (Pixel pix) {
     if (pix >= ncolors) return -1;
     bg = pix; 		return 0;
+}
+
+//
+//  TruncCmap()
+//
+//  TruncCmap truncates the cmap to the specified # of cells
+//
+int xwd::TruncCmap (int new_ncolors) {
+    int 	i, j, k, numdups, unique_colors;
+    Bool	mapped;
+    XColor	*newcolors;
+
+    // if the number to trunc to is not smaller than the number
+    // of colors in the image, do nothing and return error
+    if (new_ncolors >= ncolors) return 1;
+
+    if (new_ncolors == 0) {
+       // an image with 0 colors?  Ok we will try
+       if (colors) delete colors;
+       colors = NULL;     // No Colors!!!
+       ncolors = header->ncolors = 0;
+    }
+
+    // it is > zero and < the current number of colors in the image
+    if (new_ncolors > 0) {
+      XColor *newColors = new XColor [new_ncolors];
+      memset (newColors, 0, new_ncolors * sizeof(XColor));
+      memcpy (newColors, colors, new_ncolors * sizeof(XColor));
+      delete colors;
+      colors = newColors;
+      ncolors = header->ncolors = new_ncolors;
+   } 
+
+   return 0;
 }
 
 //  squishCmap squishes out duplicate cells from the cmap
@@ -1450,16 +1484,6 @@ int xwd::ReadXWD (int withData) {
         if ((gzname = new char [strlen(name) + 8]) == NULL)
             Error("ReadXWD: can't malloc filename storage.");
         strcpy (gzname, name);  strcat (gzname, ".gz");
-    }
-
-    //  try to open a non-gzipped one first
-    if (!(in_file = fopen(name, "rb"))) {
-      if (!(gz_file = gzopen(gzname, "rb"))) {
-	fprintf(stderr, "Error: Can't open %s or %s\n", name, gzname);
-	delete gzname;
-        return(1);
-      }
-      use_gzipped = True;	writeGzipped=True;
     }
 
     //  try to open a non-gzipped one first
