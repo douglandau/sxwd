@@ -26,278 +26,241 @@
 
 extern char *progname;
 
-/* Reads a non-blank line, stripping comments and blank lines.
-   At EOF, either exits, or returns 0, depending on exit_p.
- */
-static char *
-read_ppm_line (FILE *in, char *buf, size_t size,
-               const char *file, int *lineP, int exit_p)
-{
+//
+//  read_ppm_line()
+//
+//  Reads a non-blank line, stripping comments and blank lines.
+//  At EOF, either exits, or returns 0, depending on exit_p.
+//
+static char * read_ppm_line (FILE *in, char *buf, size_t size,
+                             const char *file, int *lineP, int exit_p) {
   char *s;
 
   if (file[0] == '-' && file[1] == 0)
-    file = "<stdin>";
+     file = "<stdin>";
 
-  while (1)
-    {
-      if (!fgets (buf, size-1, in))
-        {
-          if (!exit_p) return 0;
-          fprintf (stderr, "%s: %s: %d: premature EOF\n",
-                   progname, file, *lineP);
-          exit (1);
-        }
+   while (1) {
+      if (!fgets (buf, size-1, in)) {
+         if (!exit_p) return 0;
+         fprintf (stderr, "%s: %s: %d: premature EOF\n",
+                  progname, file, *lineP);
+         exit (1);
+      }
 
       (*lineP)++;
 
-      s = strchr(buf, '#');    /* delete comments to end of line */
-      if (s)
-        {
+      s = strchr(buf, '#');    // delete comments to end of line
+      if (s) {
           s[0] = '\n';
           s[1] = 0;
-        }
+      }
 
       s = buf;
       while (*s == ' ' || *s == '\t' ||  /* skip white */
              *s == '\n' || *s == '\r')
-        s++;
+         s++;
 
       if (*s != 0)
         break;    /* non-blank line: return it.  Else read another. */
-    }
-  return buf;
+   }
+   return buf;
 }
 
 
-/* Reads a PBM, PGM, or PPM file, binary or ASCII, and returns a `struct ppm'
-   that contains RGBA data.  File name of "-" means stdin.
- */
-struct ppm *
-read_ppm (const char *file)
-{
-  int stdin_p = !strcmp(file, "-");
-  FILE *in;
-  char buf [10240];
-  int max;
-  char dummy;
-  struct ppm *ppm = (struct ppm *) calloc (1, sizeof(*ppm));
-  int line = 1;
+//
+//  read_ppm()
+//
+//  Reads a PBM, PGM, or PPM file, binary or ASCII, and returns a `struct ppm'
+//  that contains RGBA data.  File name of "-" means stdin.
+//
+//
+struct ppm * read_ppm (const char *file) {
 
-  if (stdin_p)
-    in = stdin;
-  else
-    {
+   int stdin_p = !strcmp(file, "-");
+   FILE *in;
+   char buf [10240];
+   int max;
+   char dummy;
+   struct ppm *ppm = (struct ppm *) calloc (1, sizeof(*ppm));
+   int line = 1;
+
+   if (stdin_p)
+      in = stdin;
+   else {
       in = fopen (file, "r");
-      if (!in)
-        {
+      if (!in) {
           sprintf(buf, "%.255s: %.255s", progname, file);
           perror(buf);
           exit (1);
-        }
-    }
+      }
+   }
 
-  read_ppm_line (in, buf, sizeof(buf), file, &line, 1);  /* header line */
-  if (buf[0] != 'P' ||
-      buf[1] < '1' ||
-      buf[1] > '6' ||
-      buf[2] != '\n')
-    {
+   // header line
+   read_ppm_line (in, buf, sizeof(buf), file, &line, 1);
+   if (buf[0] != 'P' ||
+       buf[1] < '1' ||
+       buf[1] > '6' ||
+       buf[2] != '\n') {
       fprintf (stderr, "%s: %s: not a PBM, PGM, or PPM file\n",
-               progname, file);
+              progname, file);
       exit (1);
-    }
+   }
 
-  ppm->type = buf[1] - '0';
-  if (ppm->type < 1 || ppm->type > 6)
-    abort();
+   ppm->type = buf[1] - '0';
+   if (ppm->type < 1 || ppm->type > 6)
+      abort();
   
 
-  read_ppm_line (in, buf, sizeof(buf), file, &line, 1); /* width/height line */
+   read_ppm_line (in, buf, sizeof(buf), file, &line, 1); /* width/height line */
 
-  if (2 != sscanf (buf, "%d %d %c", &ppm->width, &ppm->height, &dummy) ||
-      ppm->width < 1 || ppm->height < 1)
-    {
+   if (2 != sscanf (buf, "%d %d %c", &ppm->width, &ppm->height, &dummy) ||
+      ppm->width < 1 || ppm->height < 1) {
       fprintf (stderr, "%s: %s: %d: bogus PNM file: %s\n",
                progname, file, line, buf);
       exit (1);
     }
 
-  ppm->rgba = (unsigned char *)
-    calloc (1, (ppm->width + 2) * (ppm->height + 2) * 4);
+   ppm->rgba = (unsigned char *)
+      calloc (1, (ppm->width + 2) * (ppm->height + 2) * 4);
 
-  if (!ppm->rgba)
-    {
+   if (!ppm->rgba) {
       fprintf (stderr, "%s: %s: out of memory (%d x %d)\n",
                progname, file, ppm->width, ppm->height);
       exit (1);
-    }
+   }
 
-  if (ppm->type == 1 || ppm->type == 4)
-    max = 1;
-  else
-    {
+   if (ppm->type == 1 || ppm->type == 4)
+      max = 1;
+   else {
       read_ppm_line (in, buf, sizeof(buf), file, &line, 1);   /* maxval line */
-      if (1 != sscanf (buf, "%d %c", &max, &dummy) || max < 1)
-        {
-          fprintf (stderr, "%s: %s: %d: bogus PNM file: %s\n",
-                   progname, file, line, buf);
-          exit (1);
-        }
+      if (1 != sscanf (buf, "%d %c", &max, &dummy) || max < 1) {
+         fprintf (stderr, "%s: %s: %d: bogus PNM file: %s\n",
+                  progname, file, line, buf);
+         exit (1);
+      }
 
-      if (max > 255)
-        {
-          fprintf (stderr, "%s: %s: %d: maxval must be <= 255\n",
-                   progname, file, line);
-          /*exit (1);*/
-        }
-    }
+      if (max > 255) {
+         fprintf (stderr, "%s: %s: %d: maxval must be <= 255\n",
+                  progname, file, line);
+         /*exit (1);*/
+      }
+   }
 
-  if (ppm->type == 1 || ppm->type == 2 || ppm->type == 3)
-    {
+   if (ppm->type == 1 || ppm->type == 2 || ppm->type == 3) {
       unsigned char *out = ppm->rgba;
       unsigned char *end = out + (ppm->width * ppm->height * 4);
       int tick = 0;
 
-      while (read_ppm_line (in, buf, sizeof(buf), file, &line, 0))
-        {
-          char *s = buf;
-          while (*s && (*s != '\r' && *s != '\n'))
-            {
-              int any = 0;
-              int n = 0;
-              while (*s == ' ' || *s == '\t') s++;
+      while (read_ppm_line (in, buf, sizeof(buf), file, &line, 0)) {
+         char *s = buf;
+         while (*s && (*s != '\r' && *s != '\n')) {
+            int any = 0;
+            int n = 0;
+            while (*s == ' ' || *s == '\t') s++;
 
-              if (*s >= '0' && *s <= '9')
-                {
-                  any = 1;
-                  while (*s >= '0' && *s <= '9')
-                    n = (n * 10) + (*s++ - '0');
-                }
-
-              if (n > max)
-                {
-                  fprintf (stderr, "%s: %s: %d: value (%d) exceeds max (%d)\n",
-                           progname, file, line, n, max);
-                  exit (1);
-                }
-
-              if (*s &&
-                  *s != ' ' && *s != '\t' &&
-                  *s != '\r' && *s != '\n')
-                {
-                  fprintf (stderr, "%s: %s: %d: bogus PNM file: '%c'\n",
-                           progname, file, line, *s);
-                  exit (1);
-                }
-
-              if (!any)            /* got nothing */
-                ;
-              else if (ppm->type == 1)  /* PBM */
-                {
-                  *out++ = (n ? 255 : 0);
-                  *out++ = (n ? 255 : 0);
-                  *out++ = (n ? 255 : 0);
-                  *out++ = 255;
-                }
-              else if (ppm->type == 2) /* PGM */
-                {
-                  n = (max == 255 ? n : ((255 * n) / max));
-                  *out++ = n;
-                  *out++ = n;
-                  *out++ = n;
-                  *out++ = 255;
-                }
-              else if (ppm->type == 3) /* PPM */
-                {
-                  n = (max == 255 ? n : ((255 * n) / max));
-                  *out++ = n;
-
-                  if (++tick == 3)  /* fill in alpha */
-                    {
-                      tick = 0;
-                      *out++ = 255;
-                    }
-                }
-              else
-                abort();
+            if (*s >= '0' && *s <= '9') {
+               any = 1;
+               while (*s >= '0' && *s <= '9')
+                  n = (n * 10) + (*s++ - '0');
             }
 
-          if (out > end)
-            break;
-        }
+            if (n > max) {
+               fprintf (stderr, "%s: %s: %d: value (%d) exceeds max (%d)\n",
+                        progname, file, line, n, max);
+               exit (1);
+            }
 
-      if (out < end)
-        fprintf (stderr, "%s: %s: %d: premature end of data\n",
-                 progname, file, line);
-    }
-  else if (ppm->type == 4 || ppm->type == 5 || ppm->type == 6)
-    {
+            if (*s &&
+                  *s != ' ' && *s != '\t' &&
+                  *s != '\r' && *s != '\n') {
+               fprintf (stderr, "%s: %s: %d: bogus PNM file: '%c'\n",
+                        progname, file, line, *s);
+               exit (1);
+           }
+
+           if (!any)            /* got nothing */
+              ;
+           else if (ppm->type == 1)  /* PBM */ {
+               *out++ = (n ? 255 : 0);
+               *out++ = (n ? 255 : 0);
+               *out++ = (n ? 255 : 0);
+               *out++ = 255;
+           } else if (ppm->type == 2) /* PGM */ {
+               n = (max == 255 ? n : ((255 * n) / max));
+               *out++ = n;
+               *out++ = n;
+               *out++ = n;
+               *out++ = 255;
+           } else if (ppm->type == 3) /* PPM */ {
+               n = (max == 255 ? n : ((255 * n) / max));
+               *out++ = n;
+
+               if (++tick == 3)  /* fill in alpha */ {
+                  tick = 0;
+                  *out++ = 255;
+               }
+           } else
+                abort();
+           }
+
+           if (out > end)
+              break;
+      }
+
+      if (out < end) fprintf (stderr, "%s: %s: %d: premature end of data\n",
+                              progname, file, line);
+
+   } else if (ppm->type == 4 || ppm->type == 5 || ppm->type == 6) {
+
       int L;
       unsigned char *out = ppm->rgba;
       unsigned char *end = out + (ppm->width * ppm->height * 4);
       int tick = 0;
       int x = 0;
 
-      while ((L = fread (buf, 1, sizeof(buf)-1, in)) > 0)
-        {
-          int i;
-          if (ppm->type == 4)  /* PBM */
-            {
-              for (i = 0; i < L; i++)
-                {
-                  int j;
-                  for (j = 7; j >= 0; j--)
-                    {
-                      int n = ((buf[i] >> j) & 1) ? 255 : 0;
-                      out[0] = out[1] = out[2] = n;
-                      out[3] = 255;
-
-                      if (x++ >= ppm->width)
-                        {
-                          /* eol pads to byte boundary */
-                          x = 0;
-                          break;
-                        }
-                      out += 4;
-                    }
-                }
-              if (out > end)
-                break;
-            }
-          else if (ppm->type == 5)  /* PGM */
-            {
-              for (i = 0; i < L; i++)
-                {
-                  int n = (max == 255 ? buf[i] : ((255 * buf[i]) / max));
+      while ((L = fread (buf, 1, sizeof(buf)-1, in)) > 0) {
+         int i;
+         if (ppm->type == 4)  /* PBM */ {
+            for (i = 0; i < L; i++) {
+               int j;
+               for (j = 7; j >= 0; j--) {
+                  int n = ((buf[i] >> j) & 1) ? 255 : 0;
                   out[0] = out[1] = out[2] = n;
                   out[3] = 255;
+  
+                  if (x++ >= ppm->width) {
+                     /* eol pads to byte boundary */
+                     x = 0;
+                     break;
+                  }
                   out += 4;
-                }
-              if (out > end)
-                break;
+               }
             }
-          else if (ppm->type == 6)  /* PPM */
-            {
-              for (i = 0; i < L; i++)
-                {
-                  int n = (max == 255 ? buf[i] : ((255 * buf[i]) / max));
-                  *out++ = n;
+            if (out > end) break;
+         } else if (ppm->type == 5)  /* PGM */ {
+            for (i = 0; i < L; i++) {
+               int n = (max == 255 ? buf[i] : ((255 * buf[i]) / max));
+               out[0] = out[1] = out[2] = n;
+               out[3] = 255;
+               out += 4;
+            }
+            if (out > end) break;
+         } else if (ppm->type == 6)  /* PPM */ {
+            for (i = 0; i < L; i++) {
+               int n = (max == 255 ? buf[i] : ((255 * buf[i]) / max));
+               *out++ = n;
 
-                  if (++tick == 3)  /* fill in alpha */
-                    {
-                      tick = 0;
-                      *out++ = 255;
-                    }
-                }
-              if (out > end)
-                break;
+               if (++tick == 3)  /* fill in alpha */ {
+                  tick = 0;
+                  *out++ = 255;
+               }
             }
-          else
+            if (out > end) break;
+         } else
             abort();
-        }
-    }
-  else
-    abort();
+      }
+   } else
+       abort();
 
 
   if (!stdin_p)
@@ -308,214 +271,199 @@ read_ppm (const char *file)
 
 
 
-/* Write a PBM, PGM, or PPM file, binary or ASCII, depending on the value
-   of the `type' slot.  File name of "-" means stdout.
- */
-void
-write_ppm (struct ppm *ppm, const char *file)
-{
-  int stdout_p = !strcmp(file, "-");
-  FILE *out;
-  unsigned char *s, *end;
-  char buf[10240];
+//
+//  write_ppm()
+//
+//  Write a PBM, PGM, or PPM file, binary or ASCII, depending on the value
+//  of the `type' slot.  File name of "-" means stdout.
+//
+//
+void write_ppm (struct ppm *ppm, const char *file) {
 
-  if (stdout_p)
-    out = stdout;
-  else
-    {
+   int stdout_p = !strcmp(file, "-");
+   FILE *out;
+   unsigned char *s, *end;
+   char buf[10240];
+
+   if (stdout_p)
+      out = stdout;
+   else {
       out = fopen (file, "w");
-      if (!out)
-        {
-          sprintf(buf, "%.255s: %.255s", progname, file);
-          perror(buf);
-          exit (1);
-        }
-    }
+      if (!out) {
+         sprintf(buf, "%.255s: %.255s", progname, file);
+         perror(buf);
+         exit (1);
+      }
+   }
 
-  fprintf (out, "P%d\n", ppm->type);
-  fprintf (out, "%d %d\n", ppm->width, ppm->height);
+   fprintf (out, "P%d\n", ppm->type);
+   fprintf (out, "%d %d\n", ppm->width, ppm->height);
 
-  if (ppm->type != 1 && ppm->type != 4)
-    fprintf (out, "%d\n", 255);
+   if (ppm->type != 1 && ppm->type != 4)
+      fprintf (out, "%d\n", 255);
 
-  s = ppm->rgba;
-  end = s + (ppm->width * ppm->height * 4);
+   s = ppm->rgba;
+   end = s + (ppm->width * ppm->height * 4);
 
-  if (ppm->type == 1)  /* PBM */
-    {
+   if (ppm->type == 1)  /* PBM */ {
       int col = 0;
       char *o = buf;
-      while (s < end)
-        {
-          int p = (s[0] + s[1] + s[2]) / 3;
-          *o++ = (p > 127 ? '1' : '0');
-          *o++ = ' ';
-          s += 4;
-          col += 2;
-          if (col >= 68)
-            {
-              o--;
-              *o++ = '\n';
-              *o = 0;
-              fputs (buf, out);
-              o = buf;
-              *o = 0;
-              col = 0;
-            }
-        }
+      while (s < end) {
+         int p = (s[0] + s[1] + s[2]) / 3;
+         *o++ = (p > 127 ? '1' : '0');
+         *o++ = ' ';
+         s += 4;
+         col += 2;
+         if (col >= 68) {
+             o--;
+             *o++ = '\n';
+             *o = 0;
+             fputs (buf, out);
+             o = buf;
+             *o = 0;
+             col = 0;
+         }
+      }
 
-      if (o > buf)
-        {
-          o--;
-          *o++ = '\n';
-          *o = 0;
-          fputs (buf, out);
-        }
-    }
-  else if (ppm->type == 2)  /* PGM */
-    {
+      if (o > buf) {
+         o--;
+         *o++ = '\n';
+         *o = 0;
+         fputs (buf, out);
+      }
+
+   } else if (ppm->type == 2)  /* PGM */ {
+
       int col = 0;
-      while (s < end)
-        {
-          int p = (s[0] + s[1] + s[2]) / 3;
-          fprintf (out, "%3d ", p);
-          s += 4;
-          col += 4; /* close enough */
-          if (col >= 66)
-            {
-              fprintf (out, "\n");
-              col = 0;
-            }
-        }
+      while (s < end) {
+         int p = (s[0] + s[1] + s[2]) / 3;
+         fprintf (out, "%3d ", p);
+         s += 4;
+         col += 4; /* close enough */
+         if (col >= 66) {
+            fprintf (out, "\n");
+            col = 0;
+         }
+      }
       if (col != 0)
         fprintf (out, "\n");
-    }
-  else if (ppm->type == 3)  /* PPM */
-    {
+
+    } else if (ppm->type == 3)  /* PPM */ {
+
       int col = 0;
-      while (s < end)
-        {
-          fprintf (out, "%3d %3d %3d ", s[0], s[1], s[2]);
-          s += 4;
-          col += 12;  /* close enough */
-          if (col >= 60)
-            {
-              fprintf (out, "\n");
-              col = 0;
-            }
-        }
+      while (s < end) {
+         fprintf (out, "%3d %3d %3d ", s[0], s[1], s[2]);
+         s += 4;
+         col += 12;  /* close enough */
+         if (col >= 60) {
+            fprintf (out, "\n");
+            col = 0;
+         }
+      }
       if (col != 0)
         fprintf (out, "\n");
-    }
 
-  else if (ppm->type == 4)  /* PBM */
-    {
+   } else if (ppm->type == 4)  /* PBM */ {
+
       char *obuf = buf;
       char *oend = buf + sizeof(buf) - 10;
       int x = 0;
-      while (s < end)
-        {
-          int byte = 0;
-          int i;
-          for (i = 7; i >= 0; i--)
-            {
-              int p = (s[0] + s[1] + s[2]) / 3;
-              if (p > 127)
-                byte |= (1 << i);
-              s += 4;
+      while (s < end) {
+         int byte = 0;
+         int i;
+         for (i = 7; i >= 0; i--) {
+            int p = (s[0] + s[1] + s[2]) / 3;
+            if (p > 127)
+               byte |= (1 << i);
+            s += 4;
 
-              if (++x >= ppm->width)
-                {
-                  /* eol pads to byte boundary */
-                  x = 0;
-                  break;
-                }
+            if (++x >= ppm->width) {
+               /* eol pads to byte boundary */
+               x = 0;
+               break;
             }
-          *obuf++ = byte;
+         }
+         *obuf++ = byte;
 
-          if (obuf >= oend)
-            {
-              fwrite (buf, 1, obuf-buf, out);
-              obuf = buf;
-            }
-        }
+         if (obuf >= oend) {
+            fwrite (buf, 1, obuf-buf, out);
+            obuf = buf;
+         }
+      }
       if (obuf != buf)
-        fwrite (buf, 1, obuf-buf, out);
-    }
-  else if (ppm->type == 5)  /* PGM */
-    {
+         fwrite (buf, 1, obuf-buf, out);
+
+  } else if (ppm->type == 5)  /* PGM */ {
       char *obuf = buf;
       char *oend = buf + sizeof(buf) - 10;
-      while (s < end)
-        {
-          *obuf++ = ((s[0] + s[1] + s[2]) / 3);
-          s += 4;
-          if (obuf >= oend)
-            {
-              fwrite (buf, 1, obuf-buf, out);
-              obuf = buf;
-            }
-        }
+      while (s < end) {
+         *obuf++ = ((s[0] + s[1] + s[2]) / 3);
+         s += 4;
+         if (obuf >= oend) {
+             fwrite (buf, 1, obuf-buf, out);
+             obuf = buf;
+         }
+      }
       if (obuf != buf)
-        fwrite (buf, 1, obuf-buf, out);
-    }
-  else if (ppm->type == 6)  /* PPM */
-    {
+         fwrite (buf, 1, obuf-buf, out);
+
+   } else if (ppm->type == 6)  /* PPM */ {
+
       char *obuf = buf;
       char *oend = buf + sizeof(buf) - 10;
-      while (s < end)
-        {
-          *obuf++ = *s++;
-          *obuf++ = *s++;
-          *obuf++ = *s++;
-          s++;
-          if (obuf >= oend)
-            {
-              fwrite (buf, 1, obuf-buf, out);
-              obuf = buf;
-            }
-        }
+      while (s < end) {
+         *obuf++ = *s++;
+         *obuf++ = *s++;
+         *obuf++ = *s++;
+         s++;
+         if (obuf >= oend) {
+            fwrite (buf, 1, obuf-buf, out);
+            obuf = buf;
+         }
+      }
       if (obuf != buf)
         fwrite (buf, 1, obuf-buf, out);
-    }
-  else
-    abort();
+
+   } else
+      abort();
 
 
 
-  if (!stdout_p)
-    fclose (out);
-  else
-    fflush (out);
+   if (!stdout_p)
+      fclose (out);
+   else
+      fflush (out);
 }
 
 
-
-/* Manipulating image data
+/*
+ *  Manipulating image data
  */
 
-struct ppm *
-copy_ppm (struct ppm *ppm)
-{
-  struct ppm *ppm2 = (struct ppm *) calloc (1, sizeof(*ppm));
-  int n;
-  memcpy (ppm2, ppm, sizeof(*ppm2));
-  n = ppm->width * ppm->height * 4;
-  ppm2->rgba = (unsigned char *) calloc (1, n);
-  if (!ppm2->rgba)
-    {
+//
+//  copy_ppm()
+//
+struct ppm * copy_ppm (struct ppm *ppm) {
+
+   struct ppm *ppm2 = (struct ppm *) calloc (1, sizeof(*ppm));
+   int n;
+   memcpy (ppm2, ppm, sizeof(*ppm2));
+   n = ppm->width * ppm->height * 4;
+   ppm2->rgba = (unsigned char *) calloc (1, n);
+   if (!ppm2->rgba) {
       fprintf (stderr, "%s: out of memory (%d x %d)\n",
                progname, ppm->width, ppm->height);
       exit (1);
-    }
-  memcpy (ppm2->rgba, ppm->rgba, n);
-  return ppm2;
+   }
+   memcpy (ppm2->rgba, ppm->rgba, n);
+   return ppm2;
 }
 
 
-void
-free_ppm (struct ppm *ppm)
-{
+//
+//  copy_ppm()
+//
+void free_ppm (struct ppm *ppm) {
   memset (ppm->rgba, 0xDE, ppm->width * ppm->height * 4);
   free (ppm->rgba);
   memset (ppm, 0xDE, sizeof(*ppm));
@@ -523,55 +471,48 @@ free_ppm (struct ppm *ppm)
 }
 
 
-void
-get_pixel (struct ppm *ppm,
-           int x, int y,
-           unsigned char *rP,
-           unsigned char *gP,
-           unsigned char *bP,
-           unsigned char *aP)
-{
-  if (x < 0 || x >= ppm->width ||
-      y < 0 || y >= ppm->height)
-    {
+void get_pixel (struct ppm *ppm,
+                   int x, int y,
+              unsigned char *rP,
+              unsigned char *gP,
+              unsigned char *bP,
+              unsigned char *aP) {
+
+   if (x < 0 || x >= ppm->width || y < 0 || y >= ppm->height) {
       *rP = *gP = *bP = *aP = 0;
-    }
-  else
-    {
+   } else {
       unsigned char *p = ppm->rgba + (((y * ppm->width) + x) * 4);
       *rP = *p++;
       *gP = *p++;
       *bP = *p++;
       *aP = *p;
-    }
+   }
 }
 
-void
-put_pixel (struct ppm *ppm,
+//
+//  put_pixel()
+//
+void put_pixel (struct ppm *ppm,
            int x, int y,
            unsigned char r,
            unsigned char g,
            unsigned char b,
-           unsigned char a)
-{
-  if (x < 0 || x >= ppm->width ||
+           unsigned char a) {
+
+   if (x < 0 || x >= ppm->width ||
       y < 0 || y >= ppm->height ||
-      a <= 0)
-    {
+      a <= 0) {
       /* no-op */
-    }
-  else
-    {
+
+   } else {
+
       unsigned char *p = ppm->rgba + (((y * ppm->width) + x) * 4);
-      if (a == 255)
-        {
+      if (a == 255) {
           p[0] = r;
           p[1] = g;
           p[2] = b;
           p[3] = a;
-        }
-      else
-        {
+      } else {
           /* dest[xyz] = (old[xyz] * (1-new[a])) + (new[xyz] * new[a])
              dest[a]   = old[a] + (new[a] * (1-old[a]))
            */
@@ -580,8 +521,8 @@ put_pixel (struct ppm *ppm,
           p[1] = ((p[1] * a2) + (g * a)) / 255;
           p[2] = ((p[2] * a2) + (b * a)) / 255;
           p[3] = p[3] + (a * (255 - p[3]) / 255);
-        }
-    }
+      }
+   }
 }
 
 
@@ -594,162 +535,163 @@ put_pixel (struct ppm *ppm,
     specify override_color at all, pass in -1 (or ~0, which is the same
     thing.)
  */
-void
-paste_ppm (struct ppm *into, int to_x, int to_y, xwd *in_xwd,
-           struct ppm *from, int from_x, int from_y, int w, int h,
-           unsigned int override_fg, unsigned int override_bg, int alpha) {
-  int i, j;
-  unsigned char ofr, ofg, ofb, obr, obg, obb;
-  int pix;
-  unsigned int orig_ofg = override_fg;
+void paste_ppm (struct ppm *into, int to_x, int to_y, xwd *in_xwd,
+                struct ppm *from, int from_x, int from_y, int w, int h,
+          unsigned int override_fg, unsigned int override_bg, int alpha) {
+   int i, j;
+   unsigned char ofr, ofg, ofb, obr, obg, obb;
+   int pix;
+   unsigned int orig_ofg = override_fg;
 
-  if (alpha <= 0)
-    return;
+   if (alpha <= 0)
+      return;
 
-  //  we are doing psuedocolor 
-  //ofr = (override_fg >> 16) & 0xFF;
-  //ofg = (override_fg >>  8) & 0xFF;
-  //ofb = (override_fg      ) & 0xFF;
-  //obr = (override_bg >> 16) & 0xFF;
-  //obg = (override_bg >>  8) & 0xFF;
-  //obb = (override_bg      ) & 0xFF;
+   //  we are doing psuedocolor 
+   //ofr = (override_fg >> 16) & 0xFF;
+   //ofg = (override_fg >>  8) & 0xFF;
+   //ofb = (override_fg      ) & 0xFF;
+   //obr = (override_bg >> 16) & 0xFF;
+   //obg = (override_bg >>  8) & 0xFF;
+   //obb = (override_bg      ) & 0xFF;
 
-  ofr = in_xwd->colors[override_fg].red >> 8;
-  ofg = in_xwd->colors[override_fg].green >> 8;
-  ofb = in_xwd->colors[override_fg].blue >> 8;
-  ofr = in_xwd->colors[override_bg].red >> 8;
-  ofg = in_xwd->colors[override_bg].green >> 8;
-  ofb = in_xwd->colors[override_bg].blue >> 8;
+   ofr = in_xwd->colors[override_fg].red >> 8;
+   ofg = in_xwd->colors[override_fg].green >> 8;
+   ofb = in_xwd->colors[override_fg].blue >> 8;
+   ofr = in_xwd->colors[override_bg].red >> 8;
+   ofg = in_xwd->colors[override_bg].green >> 8;
+   ofb = in_xwd->colors[override_bg].blue >> 8;
 
-  override_fg = (override_fg <= 0xFFFFFF);
-  override_bg = (override_bg <= 0xFFFFFF);
+   override_fg = (override_fg <= 0xFFFFFF);
+   override_bg = (override_bg <= 0xFFFFFF);
 
 # define MIDPOINT (3 * 160)  /* around 62% intensity */
 
-  for (j = 0; j < h; j++)
-    for (i = 0; i < w; i++) {
-        unsigned char r, g, b, a;
-        unsigned char ored, og, ob, oa;
-        get_pixel (from, from_x + i, from_y + j, &r, &g, &b, &a);
-	ored=r; og=g; ob=b; oa=a;
-// fprintf (stderr, "1paste_pbm: r=%d, g=%d, b=%d\n", r, g, b);
-        if (alpha < 255) a = a * alpha / 255;
-
-        if (override_fg || override_bg) {
+   for (j = 0; j < h; j++)
+      for (i = 0; i < w; i++) {
+         unsigned char r, g, b, a;
+         unsigned char ored, og, ob, oa;
+         get_pixel (from, from_x + i, from_y + j, &r, &g, &b, &a);
+	      ored=r; og=g; ob=b; oa=a;
+ // fprintf (stderr, "1paste_pbm: r=%d, g=%d, b=%d\n", r, g, b);
+         if (alpha < 255) a = a * alpha / 255;
+ 
+         if (override_fg || override_bg) {
             if (r + g + b < MIDPOINT)  {    /* image's foreground color */
-                if (override_fg) {
-                    r = 255-((255-r) * (255-ofr) / 255);
-                    g = 255-((255-g) * (255-ofg) / 255);
-                    b = 255-((255-b) * (255-ofb) / 255);
-                }
+               if (override_fg) {
+                   r = 255-((255-r) * (255-ofr) / 255);
+                   g = 255-((255-g) * (255-ofg) / 255);
+                   b = 255-((255-b) * (255-ofb) / 255);
+               }
             } else {                  /* image's background color */
-                if (override_bg) {
-                    r = r * obr / 255;
-                    g = g * obg / 255;
-                    b = b * obb / 255;
-                }
+               if (override_bg) {
+                  r = r * obr / 255;
+                  g = g * obg / 255;
+                  b = b * obb / 255;
+               }
             }
-        }
+         }
 
-	//  hmm, need to fold a into the mix 
-	r += a;  g += a;  b += a;
-  	pix = in_xwd->GetFarthestColor ((int) r, (int) g, (int) b);
+      //  hmm, need to fold a into the mix 
+	   r += a;  g += a;  b += a;
+  	   pix = in_xwd->GetFarthestColor ((int) r, (int) g, (int) b);
         // do it transparently
-	//if ((ored==255) && (og==255) && (ob=255)) 
-	if (a>0)
-	    in_xwd->PutPixel(to_x+i, to_y+j, (unsigned long) in_xwd->fg);
-	// fprintf (stderr, "paste_pbm: r=%d, g=%d, b=%d, pix=%d, pix_r=%d, pix_g=%d, pix_b=%d\n", r, g, b, pix, in_xwd->colors[pix].red, in_xwd->colors[pix].green, in_xwd->colors[pix].blue );
-	if (into) put_pixel (into,   to_x + i,   to_y + j,  r,  g,  b,  a);
-    }
+	   //if ((ored==255) && (og==255) && (ob=255)) 
+	   if (a>0)
+	      in_xwd->PutPixel(to_x+i, to_y+j, (unsigned long) in_xwd->fg);
+
+	   // fprintf (stderr, "paste_pbm: r=%d, g=%d, b=%d, pix=%d, pix_r=%d, pix_g=%d, pix_b=%d\n", r, g, b, pix, in_xwd->colors[pix].red, in_xwd->colors[pix].green, in_xwd->colors[pix].blue );
+
+	   if (into) 
+         put_pixel (into,   to_x + i,   to_y + j,  r,  g,  b,  a);
+   }
 # undef MIDPOINT
 }
 
 
-/* Returns a copy of the PPM, scaled larger or smaller.
-   When scaling down, it dithers; when scaling up, it does not.
- */
-struct ppm *
-scale_ppm (struct ppm *ppm, double scale)
-{
-  int x, y;
-  struct ppm *ppm2;
+//
+//  scale_ppm()
+//
+//  Returns a copy of the PPM, scaled larger or smaller.
+//  When scaling down, it dithers; when scaling up, it does not.
+//
+//
+struct ppm * scale_ppm (struct ppm *ppm, double scale) {
+   int x, y;
+   struct ppm *ppm2;
 
-  if (scale == 1.0) return copy_ppm (ppm);
-  if (scale <= 0.0) return 0;
+   if (scale == 1.0) return copy_ppm (ppm);
+   if (scale <= 0.0) return 0;
 
-  ppm2 = (struct ppm *) malloc (sizeof(*ppm2));
-  memcpy (ppm2, ppm, sizeof(*ppm2));
-  ppm2->width  = (int)((ppm->width  + 0.5) * scale);
-  ppm2->height = (int)((ppm->height + 0.5) * scale);
+   ppm2 = (struct ppm *) malloc (sizeof(*ppm2));
+   memcpy (ppm2, ppm, sizeof(*ppm2));
+   ppm2->width  = (int)((ppm->width  + 0.5) * scale);
+   ppm2->height = (int)((ppm->height + 0.5) * scale);
 
-  ppm2->rgba = (unsigned char *)
-    calloc (1, (ppm2->width) * (ppm2->height) * 4);
-  if (!ppm2->rgba)
-    {
+   ppm2->rgba = (unsigned char *)
+      calloc (1, (ppm2->width) * (ppm2->height) * 4);
+   if (!ppm2->rgba) {
       fprintf (stderr, "%s: out of memory (%d x %d)\n",
                progname, ppm2->width, ppm2->height);
       exit (1);
-    }
+   }
 
-  if (scale < 1.0)
-    for (y = 0; y < ppm2->height; y++)
-      for (x = 0; x < ppm2->width; x++) {
-          int x1 = (int) ( (x - 0) / scale);
-          int x2 = (int)((x + 1) / scale);
-          int y1 = (int)((y - 0) / scale);
-          int y2 = (int)((y + 1) / scale);
-          int xx, yy;
-          int tr = 0, tg = 0, tb = 0, ta = 0;
-          int total_pixels = (x2-x1) * (y2-y1);
+   if (scale < 1.0)
+      for (y = 0; y < ppm2->height; y++)
+         for (x = 0; x < ppm2->width; x++) {
+            int x1 = (int) ( (x - 0) / scale);
+            int x2 = (int)((x + 1) / scale);
+            int y1 = (int)((y - 0) / scale);
+            int y2 = (int)((y + 1) / scale);
+            int xx, yy;
+            int tr = 0, tg = 0, tb = 0, ta = 0;
+            int total_pixels = (x2-x1) * (y2-y1);
 
-          unsigned char *p = ppm2->rgba + (((y * ppm2->width) + x) * 4);
+            unsigned char *p = ppm2->rgba + (((y * ppm2->width) + x) * 4);
 
-          if (total_pixels <= 0)
-            continue;
+            if (total_pixels <= 0)
+               continue;
 
-          for (yy = y1; yy < y2; yy++)
+         for (yy = y1; yy < y2; yy++)
             for (xx = x1; xx < x2; xx++) {
-                unsigned char r, g, b, a;
-                get_pixel (ppm, (xx < 0 ? 0 : xx),
-                           (yy < 0 ? 0 : yy),
-                           &r, &g, &b, &a);
-                tr += r;
-                tg += g;
-                tb += b;
-                ta += a;
-              }
+               unsigned char r, g, b, a;
+               get_pixel (ppm, (xx < 0 ? 0 : xx),
+                          (yy < 0 ? 0 : yy),
+                          &r, &g, &b, &a);
+               tr += r;
+               tg += g;
+               tb += b;
+               ta += a;
+            }
 
-          tr /= total_pixels;
-          tg /= total_pixels;
-          tb /= total_pixels;
-          ta /= total_pixels;
+         tr /= total_pixels;
+         tg /= total_pixels;
+         tb /= total_pixels;
+         ta /= total_pixels;
 
-          /* put_pixel would do the wrong thing with alpha here */
-          p[0] = tr;
-          p[1] = tg;
-          p[2] = tb;
-          p[3] = ta;
-        }
+         /* put_pixel would do the wrong thing with alpha here */
+         p[0] = tr;
+         p[1] = tg;
+         p[2] = tb;
+         p[3] = ta;
+      }
 
-  else     /* scale > 1.0 */
+   else     /* scale > 1.0 */
 
-    for (y = 0; y < ppm2->height; y++)
-      for (x = 0; x < ppm2->width; x++)
-        {
-          unsigned char r, g, b, a;
-          unsigned char *p = ppm2->rgba + (((y * ppm2->width) + x) * 4);
-          get_pixel (ppm,
-                     int((x + 0.5) / scale),
-                     int((y + 0.5) / scale),
-                     &r, &g, &b, &a);
-          /* put_pixel would do the wrong thing with alpha here */
-          p[0] = r;
-          p[1] = g;
-          p[2] = b;
-          p[3] = a;
-        }
-
-  return ppm2;
+      for (y = 0; y < ppm2->height; y++)
+         for (x = 0; x < ppm2->width; x++) {
+            unsigned char r, g, b, a;
+            unsigned char *p = ppm2->rgba + (((y * ppm2->width) + x) * 4);
+            get_pixel (ppm,
+                       int((x + 0.5) / scale),
+                       int((y + 0.5) / scale),
+                       &r, &g, &b, &a);
+            /* put_pixel would do the wrong thing with alpha here */
+            p[0] = r;
+            p[1] = g;
+            p[2] = b;
+            p[3] = a;
+         }
+   return ppm2;
 }
 
 
@@ -779,85 +721,81 @@ static unsigned char blur_alpha_curve [256] = {
   255, 255, 255, 255
 };
 
+//
+//  blur_ppm()
+//
+//  Returns a copy of the PPM, blurred out.
+//  The PPM will be enlarged in both directions by 2*radius.
+//
+//
+struct ppm * blur_ppm (struct ppm *ppm, int radius) {
+   int x, y;
+   struct ppm *ppm2;
+   int x1, x2, y1, y2;
+   int total_pixels;
+   int maxx, maxy;
 
-/* Returns a copy of the PPM, blurred out.
-   The PPM will be enlarged in both directions by 2*radius.
- */
-struct ppm *
-blur_ppm (struct ppm *ppm, int radius)
-{
-  int x, y;
-  struct ppm *ppm2;
-  int x1, x2, y1, y2;
-  int total_pixels;
-  int maxx, maxy;
+   if (radius == 0) return copy_ppm (ppm);
+   if (radius < 0) radius = -radius;
 
-  if (radius == 0) return copy_ppm (ppm);
-  if (radius < 0) radius = -radius;
+   ppm2 = (struct ppm *) malloc (sizeof(*ppm2));
+   memcpy (ppm2, ppm, sizeof(*ppm2));
+   ppm2->width  = (ppm->width  + (radius * 2));
+   ppm2->height = (ppm->height + (radius * 2));
 
-  ppm2 = (struct ppm *) malloc (sizeof(*ppm2));
-  memcpy (ppm2, ppm, sizeof(*ppm2));
-  ppm2->width  = (ppm->width  + (radius * 2));
-  ppm2->height = (ppm->height + (radius * 2));
+   ppm2->rgba = (unsigned char *)
+      calloc (1, (ppm2->width) * (ppm2->height) * 4);
 
-  ppm2->rgba = (unsigned char *)
-    calloc (1, (ppm2->width) * (ppm2->height) * 4);
-
-  if (!ppm2->rgba)
-    {
+   if (!ppm2->rgba) {
       fprintf (stderr, "%s: out of memory (%d x %d)\n",
                progname, ppm2->width, ppm2->height);
       exit (1);
-    }
+   }
 
+   total_pixels = (radius * 2) * (radius * 2);
+   maxx = ppm->width  - 1;
+   maxy = ppm->height - 1;
 
-  total_pixels = (radius * 2) * (radius * 2);
-  maxx = ppm->width  - 1;
-  maxy = ppm->height - 1;
-
-  y1 = -radius * 2;
-  y2 = 0;
-  for (y = 0; y < ppm2->height; y++, y1++, y2++)
-    {
+   y1 = -radius * 2;
+   y2 = 0;
+   for (y = 0; y < ppm2->height; y++, y1++, y2++) {
       unsigned char *p = ppm2->rgba + ((y * ppm2->width) * 4);
       x1 = -radius * 2;
       x2 = 0;
 
-      for (x = 0; x < ppm2->width; x++, x1++, x2++, p += 4)
-        {
-          int xx, yy;
-          unsigned int tr = 0, tg = 0, tb = 0, ta = 0;
+      for (x = 0; x < ppm2->width; x++, x1++, x2++, p += 4) {
+         int xx, yy;
+         unsigned int tr = 0, tg = 0, tb = 0, ta = 0;
 
-          for (yy = y1; yy < y2; yy++)
-            for (xx = x1; xx < x2; xx++)
-              {
-                unsigned char r, g, b, a;
-                if (xx >= 0 && xx <= maxx &&
-                    yy >= 0 && yy <= maxy)
+         for (yy = y1; yy < y2; yy++)
+            for (xx = x1; xx < x2; xx++) {
+               unsigned char r, g, b, a;
+               if (xx >= 0 && xx <= maxx &&
+                   yy >= 0 && yy <= maxy)
                   get_pixel (ppm, xx, yy, &r, &g, &b, &a);
-                else
+               else
                   r = g = b = a = 0;
-                tr += r;
-                tg += g;
-                tb += b;
-                ta += a;
-              }
+                  tr += r;
+                  tg += g;
+                  tb += b;
+                  ta += a;
+            }
 
-          tr /= total_pixels;
-          tg /= total_pixels;
-          tb /= total_pixels;
-          ta /= total_pixels;
+         tr /= total_pixels;
+         tg /= total_pixels;
+         tb /= total_pixels;
+         ta /= total_pixels;
 
-          if (ta > 255) abort();
-          ta = blur_alpha_curve[ta];
+         if (ta > 255) abort();
+         ta = blur_alpha_curve[ta];
 
-          /* put_pixel would do the wrong thing with alpha here */
-          p[0] = tr;
-          p[1] = tg;
-          p[2] = tb;
-          p[3] = ta;
-        }
-    }
+         /* put_pixel would do the wrong thing with alpha here */
+         p[0] = tr;
+         p[1] = tg;
+         p[2] = tb;
+         p[3] = ta;
+      }
+   }
 
-  return ppm2;
+   return ppm2;
 }
