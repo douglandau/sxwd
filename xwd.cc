@@ -510,38 +510,31 @@ int xwd::SetBlackPixel (Pixel pix) {
     return 0;
 }
 
+//
+//  SwapBW()
+//
 //  SwapBW swaps BlackPixel and whitePixel and remaps the pixels
+//
+//  Usually blackPixel is 0 and whitePixel is 1.  If an image comes
+//  along that has white at 0 and black at 1, it might best to straighten
+//  it out before going any further with it
+//
 int xwd::SwapBW () {
-	register int x, y;
+   register int x, y;
 
-   // save the current values as SetWhitePixel and SetBlackPixel will change em
-	Pixel currentWhitePixel = whitePixel;
-	Pixel currentBlackPixel = blackPixel;
+   Pixel oldWhitePixel = whitePixel;
+   Pixel oldBlackPixel = blackPixel;
 
-	SetBlackPixel(currentWhitePixel);
-	SetWhitePixel(currentBlackPixel);
+   SetBlackPixel(oldWhitePixel);
+   SetWhitePixel(oldBlackPixel);
 
-   // set all the white pixels to 99, which we don't use
-	for (y=0; y < image->height ; y++) {
-		for (x = 0; x < image->width; x++) {
-			if (GetPixel(x,y) == (Pixel) currentWhitePixel)  PutPixel(x,y,99);
-		}
-	}
-
-   // set all the black pixels to the new whitePixel
-	for (y=0; y < image->height ; y++) {
-		for (x = 0; x < image->width; x++) {
-			if (GetPixel(x,y) == (Pixel) currentBlackPixel)  PutPixel(x,y,blackPixel);
-		}
-	}
-
-   // Now set all the formerly white pixels to the new whitePixel
-	for (y=0; y < image->height ; y++) {
-		for (x = 0; x < image->width; x++) {
-			if (GetPixel(x,y) == (Pixel) 99)  PutPixel(x,y,whitePixel);
-		}
-	}
-	return 1;    // TODO:  use or discard this
+   for (y=0; y < image->height ; y++) {
+      for (x = 0; x < image->width; x++) {
+         if (GetPixel(x,y) == (Pixel) oldWhitePixel)  PutPixel(x,y,whitePixel);
+         else if (GetPixel(x,y) == (Pixel) oldBlackPixel)  PutPixel(x,y,blackPixel);
+      }
+   }
+   return 0;
 }
 
 //  SetForeground sets the foreround to the given pixel value
