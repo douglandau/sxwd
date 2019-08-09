@@ -364,6 +364,15 @@ int main (int argc, char **argv) {
 	   	in->name = argv[i];
 			continue;
 	   }
+	 	if (strcasecmp(argv[i], "-new") == 0) {
+	   	//if (++i >= argc) usage("No new name specified.");
+	   	//in->name = argv[i];
+	   	in = new xwd ();
+	   	// synthesize the image
+	   	if (in->DontReadXWD())
+				fprintf (stderr, "Error:  Can't create %s\n", fileName);
+			continue;
+	   }
 	 	if (strcasecmp(argv[i], "-ncolors") == 0) {
          // if no argument specified then print the image's ncolors
 	   	if ((i+1 >= argc) || (argv[i+1][0] == '-')) {

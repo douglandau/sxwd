@@ -21,7 +21,9 @@ static const char *dxwd_cc_RCSID="$Id: xwd.cc,v 1.13 2019/03/01 23:15:23 dkl Exp
 
 unsigned long swaptest = 1;
 
-//  constructor
+//
+//  Constructor
+//
 xwd::xwd (const char *in_name) { 
     image = NULL; colors = NULL; ncolors = 0; header = NULL;
     name = new char [strlen(in_name)+1];
@@ -37,7 +39,26 @@ xwd::xwd (const char *in_name) {
 }
 
 //
-//  destructor
+//  Constructor with no name
+//
+xwd::xwd () { 
+   image = NULL; colors = NULL; ncolors = 0; header = NULL;
+   name = new char [strlen(NEW_IMAGE_NAME)+4+1];
+   sprintf (name, "%s.xwd", NEW_IMAGE_NAME);
+   font = new char [strlen(DEFAULT_FONT)+1];
+   strcpy (font, DEFAULT_FONT);
+   fontPath = new char [strlen(DEFAULT_FONT_PATH)+1];
+   strcpy (fontPath, DEFAULT_FONT_PATH);
+   fontDPI = new char[256]; 
+   sprintf (fontDPI, "misc");
+
+   //  Since we are not going to read it in, initialize it to 
+   //  having two colors and being 8x8 and fill it with white
+   DontReadXWD();
+}
+
+//
+//  Destructor
 //
 xwd::~xwd () { 
     if (font) delete font;
@@ -93,6 +114,9 @@ void xwd::SetFontDPI (char *newdpi) {
 }
 
 
+//
+//  ListPath()
+//
 int xwd::ListPath (char *path) {
 
 	//static int depth=0;
@@ -1009,7 +1033,12 @@ void xwd::DumpImage () {
 
 //  Dump the header
 void xwd::DumpHeader () {
+    int win_name_size = header->header_size - SIZEOF(XWDheader);
+    printf ("name: %s\n", name);
     printf ("header->header_size: %d\n", header->header_size);
+    printf ("SIZEOf(XWDheader): %d\n", SIZEOF(XWDheader));
+    printf ("win_name size = header->header_size - SIZEOF(XWDheader): %d\n", win_name_size);
+
     printf ("header->file_version: %d\n", header->file_version);
     printf ("header->pixmap_format: %d\n", header->pixmap_format);
     printf ("header->pixmap_depth: %d\n", header->pixmap_depth);
@@ -1362,33 +1391,34 @@ int xwd::WriteXWD () {
     XWDColor xwdcolor;
     int i, buffer_size, result, ok;
 
-
-    // force writing gzipped if name given ends in .gz 
+    // force writing gzipped if input is gzipped 
     if (strstr(name, ".gz")) 	{ writeGzipped = True; }
 
     sprintf (fname, "%s", name); 
+    // append .xwd if not already there, we made space for it
+    if (!strstr(fname, ".xwd"))  strcat (fname, ".xwd"); 
     if (writeGzipped) {
       if (!strstr(name, ".gz"))  strcat (fname, ".gz"); 
     }
 
     if (writeGzipped)  {
-	gz_out = gzopen(fname, "wb");
-        if (gz_out == NULL) {
+	    gz_out = gzopen(fname, "wb");
+       if (gz_out == NULL) {
           fprintf(stderr,"%s: Error: Can't write output file: %s\n",name,fname);
-	  delete fname;
+	       delete fname;
           return(1);
-        }
+        } 
     } else {
-      if ((out = fopen (fname, "w" )) == NULL) {
-        fprintf(stderr, "%s: Error: can't write output file: %s\n", name,fname);
-        perror ("xwd");
-	delete fname;
-        return 1;
-      }
+       if ((out = fopen (fname, "w" )) == NULL) {
+          fprintf(stderr,"%s: Error: can't write output file: %s\n",name,fname);
+          perror ("xwd");
+	       delete fname;
+          return 1;
+       }
     }
 
     // sync up first
-    header->ncolors = ncolors;
+    ncolors = header->ncolors;
 
     /*  Calculate header size  */
     header->header_size = (CARD32) SIZEOF(XWDheader) + strlen(name) + 1;
@@ -1444,9 +1474,9 @@ int xwd::WriteXWD () {
     if (verbose) printf("xwd: Dumping pixmap.  bufsize=%d\n", buffer_size);
 
     if (writeGzipped) {
-	ok = (gzwrite(gz_out, image->data, buffer_size) == buffer_size);
+	    ok = (gzwrite(gz_out, image->data, buffer_size) == buffer_size);
     } else {
-	ok = (fwrite(image->data, (int) buffer_size, 1, out) == 1);
+	    ok = (fwrite(image->data, (int) buffer_size, 1, out) == 1);
     }
     if (!ok) {
         perror("xwd");
@@ -1632,6 +1662,92 @@ int xwd::ReadXWD (int withData) {
     // squishCmap();
  
     return 0;
+}
+
+//
+//  DontReadXWD()
+//
+//  Since it is a new image and dooes n't exist to be read,
+//  give it two colors, make it 8x8 and fill it with white
+//
+int xwd::DontReadXWD() {
+   XWDColor		xwdcolor;
+   int			i, buffer_size, win_name_size, result;
+   char 		*win_name;
+
+   // header_size = SIZEOF(XWDheader) + length of null-terminated window name
+  
+   header = new XWDFileHeader;
+   header->header_size = 107;
+   header->file_version = 7;
+   header->pixmap_format = 2;
+   header->pixmap_depth = 8;
+   header->pixmap_width = 8;
+   header->pixmap_height = 8;
+   header->xoffset  =0;
+   header->byte_order = 1;
+   header->bitmap_bit_order = 1;
+   header->bitmap_pad = 8;
+   header->bits_per_pixel = 8;
+   header->bytes_per_line = 8;
+   header->visual_class = 3;
+   header->red_mask = header->green_mask = header->blue_mask = 0;
+   header->colormap_entries = 2;
+   header->ncolors = 2;
+   header->window_width = 8;
+   header->window_height = 8;
+   
+    /* alloc window name */
+    win_name_size = strlen(name);
+    //if ((win_name = new char [win_name_size+1]) == NULL)
+    //    Error("Can't malloc window name storage.");
+    //sprintf(win_name, "%s", NEW_IMAGE_NAME);
+    win_name = strdup(name);
+
+    name = win_name;
+
+    /* initialize the image */
+    image = new XImage;
+    image->depth = header->pixmap_depth;
+    image->format = header->pixmap_format;
+    image->xoffset = header->xoffset;
+    image->data = NULL;
+    image->width = header->pixmap_width;
+    image->height = header->pixmap_height;
+    image->bitmap_pad = header->bitmap_pad;
+    image->bytes_per_line = header->bytes_per_line;
+    image->byte_order = header->byte_order;
+    image->bitmap_unit = header->bitmap_unit;
+    image->bitmap_bit_order = header->bitmap_bit_order;
+    image->bits_per_pixel = header->bits_per_pixel;
+    image->red_mask = header->red_mask;
+    image->green_mask = header->green_mask;
+    image->blue_mask = header->blue_mask;
+
+    /* create the color map */
+    if (ncolors = header->ncolors = 2) {
+	    colors = new XColor [ncolors];
+	    if (!colors)
+	       Error("Can't malloc color table");
+       blackPixel = 0;
+       whitePixel = 1;
+	    colors[0].red = colors[2].green = colors[2].blue = 0;
+	    colors[0].pixel = 0;
+	    colors[0].flags = 0;
+	    colors[1].red = colors[1].green = colors[1].blue = 65535;
+	    colors[1].pixel = 1;
+	    colors[1].flags = 0;
+ 	 }
+
+    /* alloc the pixel buffer */
+    buffer_size = ImageSize();
+    if ((image->data = new char [buffer_size]) == NULL)
+       Error ("Can't malloc data buffer.");
+
+    // set it to whitePixel
+    memset (image->data, (int) whitePixel, buffer_size);
+
+   return 0;
 }
 
 //   from X11R6/programs/xwud.c 
