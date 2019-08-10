@@ -14,10 +14,13 @@
 
 #ifndef __FONT_BDF__
 #define __FONT_BDF__
+#include <limits.h>
 
 #define LEFT   1
 #define CENTER 0
 #define RIGHT -1
+
+#define MAX_CHARS SHRT_MAX
 
 struct font_char {
   int lbearing;  /* origin to left edge of raster */
@@ -31,7 +34,7 @@ struct font {
   int ascent;
   int descent;
   int monochrome_p;
-  struct font_char chars[256];
+  struct font_char chars[MAX_CHARS];
 };
 
 
@@ -62,6 +65,8 @@ extern void scale_font (struct font *font, double scale);
    be visible on light or dark backgrounds.
  */
 extern void halo_font (struct font *font, int radius);
+
+extern void setVerbose (int);
 
 /* Write debugging info on stderr. */
 extern void dump_font (struct font *font, int which_char);
