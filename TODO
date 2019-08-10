@@ -1,16 +1,15 @@
 
-  TODO LIST
 
 - Fix font reading.  I don't remember where I got the fonts last time
   but this time it's puking on fonts with >256 glyphs, which is all of
   them it seems
 
 - Migrate font.cc to c++ by making it a class ; it is now still C despite name
+- Pull the font and fontpath back out of the xwd class
 
-- Continue to improve usage message, isolate usage msg strings so they can
-  be all presented in -help
+- isolate usage msg strings so they can be all presented in -help
 
-- Actually document in README
+- Document option use in README
 
 - add margin around banners/text and settable in pixels or characters
 

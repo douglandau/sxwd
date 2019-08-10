@@ -11,6 +11,10 @@
    documentation.  No representations are made about the suitability of this
    software for any purpose.  It is provided "as is" without express or 
    implied warranty.
+
+   Copyright © 2019 Douglas Landau <doug.landau@gmail.com>
+   Have at it.
+  
  */
 
 #ifndef __PPM_LITE__
@@ -24,18 +28,38 @@ struct ppm {
 
 /* Filenames below may be "-" for stdin/stdout. */
 
+//
+//  read_ppm()
+//
 extern struct ppm *read_ppm (const char *filename);
+
+//
+//  write_ppm
+//
 extern void write_ppm (struct ppm *ppm, const char *filename);
 
+//
+//  copy_ppm()
+//
 extern struct ppm *copy_ppm (struct ppm *ppm);
+
+//
+//  free_ppm()
+//
 extern void free_ppm (struct ppm *ppm);
 
+//
+//  get_pixel()
+//
 extern void get_pixel (struct ppm *ppm,
                        int x, int y,    /* out of range is ok */
                        unsigned char *r_ret,
                        unsigned char *g_ret,
                        unsigned char *b_ret,
                        unsigned char *a_ret);
+//
+//  put_pixel()
+//
 extern void put_pixel (struct ppm *ppm,
                        int x, int y,    /* out of range is ok */
                        unsigned char r,
@@ -43,27 +67,39 @@ extern void put_pixel (struct ppm *ppm,
                        unsigned char b,
                        unsigned char a);
 
-/* Paste part of one image into another, with all necessary clipping.
-   Alpha controls the blending of the new image into the old image
-    (and any alpha already in the new image is also taken into account.)
-  If override_color is an RGB value (0xNNNNNN) then any color values in
-    the source image are assumed to be that, and only the source image's
-    alpha is used.  (Note that 0 is a color: black.  To not specify
-    override_color at all, pass in -1 (or ~0, which is the same thing.)
- */
+//
+//  paste_ppm()
+//
+//  Paste part of one image into another, with all necessary clipping.
+//  Alpha controls the blending of the new image into the old image
+//  (and any alpha already in the new image is also taken into account.)
+//
+//  If override_color is an RGB value (0xNNNNNN) then any color values in
+//  the source image are assumed to be that, and only the source image's
+//  alpha is used.  (Note that 0 is a color: black.  To not specify
+//  override_color at all, pass in -1 (or ~0, which is the same thing.)
+//
+//
 extern void paste_ppm (struct ppm *into, int to_x, int to_y, xwd *in_xwd,
                        struct ppm *from, int from_x, int from_y, int w, int h,
                        unsigned int override_fg, unsigned int override_bg,
                        int alpha);
 
-/* Returns a copy of the PPM, scaled larger or smaller.
-   When scaling down, it dithers; when scaling up, it does not.
- */
+//
+//  scale_pnm()
+//
+//  Returns a copy of the PPM, scaled larger or smaller.
+//  When scaling down, it dithers; when scaling up, it does not.
+//
+//
 extern struct ppm *scale_ppm (struct ppm *ppm, double scale);
 
-/* Returns a copy of the PPM, blurred out.
-   The PPM will be enlarged in both directions by 2*radius.
- */
+//
+//  blur_pnm()
+//
+//  Returns a copy of the PPM, blurred out.
+//  The PPM will be enlarged in both directions by 2*radius.
+//
 extern struct ppm *blur_ppm (struct ppm *ppm, int radius);
 
 #endif /* __PPM_LITE__ */

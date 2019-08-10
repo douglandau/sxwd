@@ -10,6 +10,7 @@
 
 #define MAXLN 512		// longest line of input text we allow
 
+#define NEW_IMAGE_NAME "new"
 #define DEFAULT_FONT "6x9.bdf"
 #define DEFAULT_FONT_DPI "misc"
 #define DEFAULT_FONT_PATH "/usr/local/share/fonts"  // where we install bdfs
@@ -24,6 +25,7 @@ typedef 	unsigned short 	Color;
 class xwd {
    public:
 		xwd (const char *name);		// for use with images which have no DPI
+		xwd ();							// for creating an image from scratch
 		~xwd ();
 
 		int 		MakeBW();			// make black-and-white
@@ -47,6 +49,7 @@ class xwd {
 		void 		Dump();
 		int 		Scale (double);
 		int 		ReadXWD (int);
+		int 		DontReadXWD ();
 		int 		WriteXWD ();
 		void 		DumpCmap(int cells=255);
 		int 		SquishCmap();
