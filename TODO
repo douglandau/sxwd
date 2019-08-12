@@ -1,8 +1,7 @@
 
 
-- Fix font reading.  I don't remember where I got the fonts last time
-  but this time it's puking on fonts with >256 glyphs, which is all of
-  them it seems
+- Finish integrating ppmcaption by stopping making ppms in font.cc
+  and make xwds instead and remove ppm.cc
 
 - Migrate font.cc to c++ by making it a class ; it is now still C despite name
 - Pull the font and fontpath back out of the xwd class
@@ -11,5 +10,13 @@
 
 - Document option use in README
 
-- add margin around banners/text and settable in pixels or characters
+- Add margin around banners/text and settable in pixels or characters
+
+- Add automatic margin sizing and shrink-wrapping based on the font's 
+  width and height so as to make the making of banners a single-option 
+  command / easy uncomplicated thing to do
+
+- Make sure all options are consistent for example -resize expects to be 
+  followed by W and H but -text expects -x and -y settings to preceed it
+
 
