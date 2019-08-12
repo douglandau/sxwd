@@ -1,0 +1,229 @@
+# Makefile.in --- ppmcaption, Copyright © 2001 Jamie Zawinski <jwz@jwz.org>
+# the `configure' script generates `Makefile' from this file.
+
+@SET_MAKE@
+.SUFFIXES:
+.SUFFIXES: .c .o
+
+srcdir		= @srcdir@
+VPATH		= @srcdir@
+
+install_prefix	=
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+bindir		= @bindir@
+mandir		= @mandir@
+man1dir		= $(mandir)/man1
+mansuffix	= 1
+
+CC		= @CC@
+CFLAGS		= @CFLAGS@
+LDFLAGS		= @LDFLAGS@
+DEFS		= @DEFS@
+LIBS		= @LIBS@
+
+DEPEND		= makedepend
+DEPEND_FLAGS	= 
+DEPEND_DEFINES	= 
+
+SHELL		= /bin/sh
+INSTALL		= @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA    = $(INSTALL)
+
+TAR		= tar
+COMPRESS	= gzip --verbose --best
+COMPRESS_EXT	= gz
+
+
+DEFINES		= $(DEFS) -D_BSD_SOURCE -D_POSIX_SOURCE
+INCLUDES	= -I. -I$(srcdir) @INCLUDES@
+
+COMMON_SRCS	= ppm-lite.c font-bdf.c
+COMMON_OBJS	= ppm-lite.o font-bdf.o
+COMMON_HDRS	= ppm-lite.h font-bdf.h config.h version.h
+
+PPMCAP_SRCS	= ppmcaption.c
+PPMCAP_OBJS	= ppmcaption.o
+PPMCAP_HDRS	= 
+
+BUILTIN_H	= builtin.h
+BUILTIN_DEFS	= -DBUILTIN_FONT
+BUILTIN_TARGET	= @BUILTIN_TARGET@
+BUILTIN_FILE	= @BUILTIN_FILE@
+BUILTIN_ARGS	= @BUILTIN_ARGS@
+
+BDF2C_SRCS	= bdf2c.c
+BDF2C_OBJS	= bdf2c.o
+BDF2C_HDRS	= 
+
+SRCS 		= $(COMMON_SRCS) $(PPMCAP_SRCS) $(BDF2C_SRCS)
+HDRS 		= $(COMMON_HDRS) $(PPMCAP_HDRS) $(BDF2C_HDRS)
+MEN		= ppmcaption.man
+BDFS		= ncenR24.bdf ncenB24.bdf ncenI24.bdf ncenBI24.bdf
+EXTRAS		= README $(BDFS)
+
+PPMCAP_LIBS	= $(LIBS)
+
+TARFILES	= configure configure.in Makefile.in config.h.in \
+		  ppmcaption.spec config.guess config.sub install-sh \
+		  $(SRCS) $(HDRS) $(MEN) $(EXTRAS)
+
+EXES = ppmcaption bdf2c
+
+default: ppmcaption
+all: $(EXES)
+
+install:   install-program   install-man
+uninstall: uninstall-program uninstall-man
+
+install-strip:
+	$(MAKE) INSTALL_PROGRAM='$(INSTALL_PROGRAM) -s' \
+		install
+
+install-program:: ppmcaption
+	$(INSTALL_PROGRAM) ppmcaption $(install_prefix)$(bindir)/
+
+install-man:: ppmcaption.man
+	$(INSTALL_DATA) $(srcdir)/ppmcaption.man $(install_prefix)$(man1dir)/ppmcaption.1
+
+uninstall-program::
+	rm -f $(install_prefix)$(bindir)/ppmcaption
+
+uninstall-man:
+	rm -f $(install_prefix)$(man1dir)/ppmcaption.1
+
+clean:
+	-rm -f *.o a.out core $(EXES) builtin.h
+
+distclean: clean
+	-rm -f config.h Makefile config.status config.cache config.log \
+	  *.bak *.rej TAGS *~ "#"*
+
+# Adds all current dependencies to Makefile
+depend:
+	$(DEPEND) -s '# DO NOT DELETE: updated by make depend'		    \
+	$(DEPEND_FLAGS) --						    \
+	$(INCLUDES) $(DEFINES) $(DEPEND_DEFINES) $(CFLAGS) -- $(SRCS)
+
+# Adds some dependencies to Makefile.in -- not totally accurate, but pretty
+# close.  This excludes dependencies on files in /usr/include, etc.  It tries
+# to include only dependencies on files which are themselves a part of this
+# package.
+distdepend:
+	@echo updating dependencies in `pwd`/Makefile.in... ;		    \
+	$(DEPEND) -w 0 -f - 						    \
+	-s '# DO NOT DELETE: updated by make distdepend' $(DEPEND_FLAGS) -- \
+	$(INCLUDES) $(DEFINES) $(DEPEND_DEFINES) $(CFLAGS) -- $(SRCS) |	    \
+	(								    \
+	  awk '/^# .*Makefile.in ---/,/^# DO .*distdepend/' < Makefile.in ; \
+	  sed -e 's/^\(#.*\)/\1/'					    \
+	      -e 's@ \./@ @g;s@ /[^ ]*@@g;/^.*:$$/d'			    \
+	      -e 's@ \([^$$]\)@ $$(srcdir)/\1@g'			    \
+	      -e 's@ $$(srcdir)/\(.*config\.h\)@ \1@g'			    \
+	      -e 's@^# $$(srcdir)/DO .*@@' ;		 		    \
+	  echo ''							    \
+	) > /tmp/distdepend.$$$$ &&					    \
+	mv Makefile.in Makefile.in.bak &&				    \
+	mv /tmp/distdepend.$$$$ Makefile.in
+
+TAGS: tags
+tags:
+	find $(srcdir) -name '*.[chly]' -print | xargs etags -a
+
+
+# How we build object files in this directory.
+.c.o:
+	$(CC) -c $(INCLUDES) $(DEFINES) $(CFLAGS) $<
+
+# this one sometimes has a -D define
+ppmcaption.o: ppmcaption.c @BUILTIN_TARGET@
+	$(CC) -c $(INCLUDES) $(DEFINES) @BUILTIN_DEFS@ $(CFLAGS) \
+	$(srcdir)/ppmcaption.c
+
+
+# The executables linked in this directory.
+#
+ppmcaption: $(PPMCAP_OBJS) $(COMMON_OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(PPMCAP_OBJS) $(COMMON_OBJS) $(PPMCAP_LIBS)
+
+bdf2c: $(BDF2C_OBJS) $(COMMON_OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(BDF2C_OBJS) $(COMMON_OBJS) $(PPMCAP_LIBS)
+
+builtin.h: bdf2c font-bdf.h $(BUILTIN_FILE)
+	./bdf2c builtin_font $(srcdir)/$(BUILTIN_FILE) $(BUILTIN_ARGS) $@
+
+
+update_spec_version::
+	@S=$(srcdir)/ppmcaption.spec ;					    \
+	U=$(srcdir)/version.h ;						    \
+	V=`sed -n 's/.*\([0-9][0-9]*\.[0-9]*\).*/\1/p' < $$U` ;		    \
+	echo -n "Updating version number in $$S to \"$$V\"... " ;	    \
+	T=/tmp/xs.$$$$ ;						    \
+	sed "s/^\(%define.version[^0-9]*\)\(.*\)/\1$$V/"		    \
+	  < $$S > $$T ;							    \
+	if cmp -s $$S $$T ; then					    \
+	  echo "unchanged." ;						    \
+	else								    \
+	  cat $$T > $$S ;						    \
+	  echo "done." ;						    \
+	fi ;								    \
+	rm $$T
+
+rpm::
+	@								   \
+  VERS=`sed -n 's/[^0-9]*\([0-9]\.[0-9][0-9]*\).*/\1/p' version.h` ;	   \
+  DIR=`pwd`/rpm_build ;							   \
+  ARCH=`rpm --showrc | sed -n 's/^build arch *: //p'` ;			   \
+  ADIR='' ;								   \
+  TGZ=ppmcaption-$$VERS.tar.gz ;					   \
+  if [ ! -f $${ADIR}$$TGZ ]; then					   \
+    echo "$${ADIR}$$TGZ does not exist!  Did you forget to \`make tar'?" ; \
+    exit 1 ; 								   \
+  fi ;									   \
+  rm -rf /var/tmp/ppmcaption-$$VERS-root ;				   \
+  rm -rf $$DIR ;							   \
+  mkdir $$DIR ;								   \
+  ( cd $$DIR; mkdir BUILD RPMS RPMS/$$ARCH SOURCES SPECS SRPMS ) ;	   \
+  cp -p $${ADIR}$$TGZ $$DIR/SOURCES/ ;					   \
+  rpmbuild --define "_topdir $$DIR" -v -ba ppmcaption.spec ;		   \
+  echo '' ;								   \
+  echo 'RPM build complete' ;						   \
+  echo '' ;								   \
+  rm -f $$DIR/$$TGZ ;							   \
+  rm -rf $$DIR/BUILD/ppmcaption-$$VERS ;				   \
+  mv $$DIR/SRPMS/ppmcaption*-$$VERS-*.rpm . ;				   \
+  mv $$DIR/RPMS/$$ARCH/ppmcaption*-$$VERS-*.rpm . ;			   \
+  rm -rf $$DIR ;							   \
+  echo '' ;								   \
+  ls -lFG ppmcaption*-$$VERS-*.rpm
+
+tar: update_spec_version
+	@NAME=`sed -n							    \
+  's/[^0-9]*\([0-9]\.[0-9][0-9]*\).*/ppmcaption-\1/p' version.h` ;	    \
+  rm -rf $$NAME ; ln -s . $$NAME ;					    \
+  echo creating tar file $${NAME}.tar.$(COMPRESS_EXT)... ;		    \
+  $(TAR) -vchf -							    \
+    `echo $(TARFILES) | sed "s|^|$$NAME/|g; s| | $$NAME/|g" `		    \
+   | $(COMPRESS) > $${NAME}.tar.$(COMPRESS_EXT) ;			    \
+  rm $$NAME ;								    \
+  ls -ldF $${NAME}.tar.$(COMPRESS_EXT)
+
+
+#############################################################################
+# DO NOT DELETE: updated by make distdepend
+
+
+ppm-lite.o: config.h
+ppm-lite.o: $(srcdir)/ppm-lite.h
+ppm-lite.o: $(srcdir)/font-bdf.h
+font-bdf.o: config.h
+font-bdf.o: $(srcdir)/ppm-lite.h
+font-bdf.o: $(srcdir)/font-bdf.h
+ppmcaption.o: config.h
+ppmcaption.o: $(srcdir)/ppm-lite.h
+ppmcaption.o: $(srcdir)/font-bdf.h
+bdf2c.o: config.h
+bdf2c.o: $(srcdir)/ppm-lite.h
+bdf2c.o: $(srcdir)/font-bdf.h
+

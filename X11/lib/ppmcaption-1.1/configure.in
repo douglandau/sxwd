@@ -1,0 +1,247 @@
+# configure.in --- ppmcaption, © 2001, 2002 Jamie Zawinski <jwz@jwz.org>
+#
+
+AC_INIT(ppmcaption.c)
+AC_CONFIG_HEADER(config.h)
+
+echo "current directory: `pwd`"
+echo "command line was: $0 $@"
+
+
+###############################################################################
+#
+#       Function to figure out how to run the compiler.
+#
+###############################################################################
+
+AC_DEFUN(AC_PROG_CC_ANSI,
+ [AC_PROG_CC
+
+  if test -z "$GCC"; then
+    # not using GCC
+    AC_MSG_CHECKING(how to request ANSI compilation)
+    case "$host" in
+      *-hpux* )
+        AC_MSG_RESULT(HPUX: adding -Ae)
+        CC="$CC -Ae"
+      ;;
+      *-aix* )
+        AC_MSG_RESULT(AIX: adding -qlanglvl=ansi -qhalt=e)
+        CC="$CC -qlanglvl=ansi -qhalt=e"
+      ;;
+      *-dec-* )
+        AC_MSG_RESULT(DEC: adding -std1 -ieee)
+        CC="$CC -std1"
+      ;;
+      *)
+        AC_MSG_RESULT(no idea)
+      ;;
+    esac
+  else
+    # using GCC
+    case "$host" in
+      *-solaris*)
+        AC_MSG_RESULT(Solaris: adding -D__EXTENSIONS__)
+        CC="$CC -D__EXTENSIONS__"
+      ;;
+    esac
+  fi
+
+  AC_MSG_CHECKING([whether the compiler works on ANSI C])
+  AC_TRY_RUN([ main(int ac, char **av) { return 0; } ],
+     AC_MSG_RESULT(yes),
+     AC_MSG_RESULT(no)
+     AC_MSG_ERROR(Couldn't build even a trivial ANSI C program: check CC.),
+     AC_MSG_ERROR(Couldn't build even a trivial ANSI C program: check CC.))
+
+  if test -n "$GCC"; then
+    AC_MSG_RESULT(Turning on gcc compiler warnings.)
+    CC="$CC -pedantic -Wall -Wstrict-prototypes -Wnested-externs"
+    # supposedly gcc 3.4 will have "-Wdeclaration-after-statement"
+    # and then perhaps we can do without -pedantic?
+  else
+    case "$host" in
+      *-irix5* |*-irix6.[0-3]* )
+        AC_MSG_RESULT(Turning on SGI compiler warnings.)
+        CC="$CC -fullwarn -use_readonly_const -rdata_shared -g3"
+      ;;
+#     *-dec-osf* )
+#       if test -z "$GCC"; then
+#         AC_MSG_RESULT(Turning on DEC C compiler warnings.)
+#         CC="$CC -migrate -w0 -verbose -warnprotos"
+#       fi
+#     ;;
+    esac
+  fi
+])
+
+###############################################################################
+#
+#       Function to figure out how to create directory trees.
+#
+###############################################################################
+
+AC_DEFUN(AC_PROG_INSTALL_DIRS,
+ [AC_CACHE_CHECK([whether "\${INSTALL} -d" creates intermediate directories],
+    ac_cv_install_d_creates_dirs,
+    [ac_cv_install_d_creates_dirs=no
+     rm -rf conftestdir
+     if mkdir conftestdir; then
+       cd conftestdir 2>/dev/null
+       ${INSTALL} -d `pwd`/dir1/dir2 >/dev/null 2>&1
+       if test -d dir1/dir2/. ; then
+         ac_cv_install_d_creates_dirs=yes
+       fi
+       cd .. 2>/dev/null
+       rm -rf conftestdir
+     fi
+    ])
+
+  if test "$ac_cv_install_d_creates_dirs" = no ; then
+    AC_CACHE_CHECK([whether "mkdir -p" creates intermediate directories],
+      ac_cv_mkdir_p_creates_dirs,
+      [ac_cv_mkdir_p_creates_dirs=no
+       rm -rf conftestdir
+       if mkdir conftestdir; then
+         cd conftestdir 2>/dev/null
+         mkdir -p dir1/dir2 >/dev/null 2>&1
+         if test -d dir1/dir2/. ; then
+           ac_cv_mkdir_p_creates_dirs=yes
+         fi
+         cd .. 2>/dev/null
+         rm -rf conftestdir
+       fi
+      ])
+  fi
+
+  if test "$ac_cv_install_d_creates_dirs" = yes ; then
+    INSTALL_DIRS='${INSTALL} -d'
+  elif test "$ac_cv_mkdir_p_creates_dirs" = yes ; then
+    INSTALL_DIRS='mkdir -p'
+  else
+    # any other ideas?
+    INSTALL_DIRS='${INSTALL} -d'
+  fi
+])
+
+
+###############################################################################
+#
+#       Function to check whether gettimeofday() exists, and how to call it.
+#	This may define HAVE_GETTIMEOFDAY and GETTIMEOFDAY_TWO_ARGS.
+#
+###############################################################################
+
+AC_DEFUN(AC_GETTIMEOFDAY_ARGS,
+ [AC_MSG_CHECKING(how to call gettimeofday)
+  AC_CACHE_VAL(ac_cv_gettimeofday_args,
+   [AC_TRY_COMPILE([#include <stdlib.h>
+                    #include <sys/time.h>],
+                   [struct timeval tv; struct timezone tzp;
+                    gettimeofday(&tv, &tzp);],
+                   [ac_gettimeofday_args=2],
+                   [AC_TRY_COMPILE([#include <stdlib.h>
+                                    #include <sys/time.h>],
+                                   [struct timeval tv; gettimeofday(&tv);],
+                                   [ac_gettimeofday_args=1],
+                                   [ac_gettimeofday_args=0])])
+    ac_cv_gettimeofday_args=$ac_gettimeofday_args])
+  ac_gettimeofday_args=$ac_cv_gettimeofday_args
+  if test "$ac_gettimeofday_args" = 1 ; then
+    AC_DEFINE(HAVE_GETTIMEOFDAY)
+    AC_MSG_RESULT(one argument)
+  elif test "$ac_gettimeofday_args" = 2 ; then
+    AC_DEFINE(HAVE_GETTIMEOFDAY)
+    AC_DEFINE(GETTIMEOFDAY_TWO_ARGS)
+    AC_MSG_RESULT(two arguments)
+  else
+    AC_MSG_RESULT(unknown)
+  fi
+])
+
+
+###############################################################################
+###############################################################################
+
+# random compiler setup
+AC_CANONICAL_HOST
+AC_PROG_CC_ANSI
+AC_PROG_CPP
+AC_C_CONST
+AC_C_INLINE
+
+# stuff for Makefiles
+AC_PROG_INSTALL
+AC_PROG_INSTALL_DIRS
+AC_PROG_MAKE_SET
+
+# random libc stuff
+AC_HEADER_STDC
+AC_CHECK_HEADERS(unistd.h)
+AC_HEADER_TIME
+AC_HEADER_SYS_WAIT
+AC_GETTIMEOFDAY_ARGS
+
+
+###############################################################################
+#
+#       Whether to do a builtin font
+#
+###############################################################################
+
+have_builtin=no
+AC_ARG_WITH(builtin,[
+----------------------------------------------------------------------------
+
+Options specific to ppmcaption:
+
+  --with-builtin="..."      Compile a default font into the program.
+                          Value should be the name of the BDF file,
+                          plus any -scale or -blur arguments, e.g.,
+
+                          --with-builtin="ncenB24.bdf -scale 0.34 -blur 3"
+
+See http://www.jwz.org/ppmcaption/ for more information.
+],
+  [with_builtin="$withval"],[with_builtin=no])
+
+case "$with_builtin" in
+  y|yes|true|1)
+    echo "error: --with-builtin requires arguments; try --help." >&2
+    exit 1
+    ;;
+  n|no|false|0)
+    ;;
+  *)
+    BUILTIN_TARGET='$(BUILTIN_H)'
+    BUILTIN_DEFS='$(BUILTIN_DEFS)'
+    set - $with_builtin
+    BUILTIN_FILE="$1"
+    shift
+    BUILTIN_ARGS="$*"
+    ;;
+esac
+
+if test "$BUILTIN_DEFS" = "" ; then
+   echo "no builtin font"
+else
+   echo "building in font: $BUILTIN_FILE $BUILTIN_ARGS"
+fi
+
+
+
+###############################################################################
+
+AC_SUBST(INCLUDES)
+AC_SUBST(GTK_LIBS)
+AC_SUBST(GLIB_LIBS)
+AC_SUBST(DEPEND)
+AC_SUBST(DEPEND_FLAGS)
+AC_SUBST(DEPEND_DEFINES)
+
+AC_SUBST(BUILTIN_TARGET)
+AC_SUBST(BUILTIN_DEFS)
+AC_SUBST(BUILTIN_FILE)
+AC_SUBST(BUILTIN_ARGS)
+
+AC_OUTPUT(Makefile)
