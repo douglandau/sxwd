@@ -1,4 +1,5 @@
 /* -*- Mode: C; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+/bbox n
    font-bdf.c --- simple, self-contained code for manipulating BDF fonts.
 
    Copyright © 2001, 2002 Jamie Zawinski <jwz@jwz.org>
@@ -28,6 +29,7 @@
 #define countof(x) (sizeof((x))/sizeof(*(x)))
 
 extern char *progname;
+static Bool verbose;
 
 /* for parsing hex numbers fast */
 static const char hex[128] = {16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
@@ -39,9 +41,10 @@ static const char hex[128] = {16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
                               16,10,11,12,13,14,15,16,16,16,16,16,16,16,16,16,
                               16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16};
 
-//
-//  read_bdf()
-//
+void SetVerbose (Bool v) {
+  verbose = v;
+}
+
 struct font * read_bdf (const char *file) {
    int stdin_p = !strcmp(file, "-");
    FILE *in;
@@ -51,7 +54,7 @@ struct font * read_bdf (const char *file) {
    int current_char = -1;
    int current_char_height = -1;
    int current_char_descent = -1;
-
+ 
    int overall_bitmap_height = -1;
    int overall_bitmap_descent = -1;
 
@@ -100,10 +103,8 @@ struct font * read_bdf (const char *file) {
             goto FAIL;
 
       } else if (!strncmp (buf, "FONT_DESCENT ", 12)) {
-
           if (1 != sscanf (buf+12, "%d %c", &font->descent, &dummy))
             goto FAIL;
-
       } else if (!strncmp (buf, "FONTBOUNDINGBOX ", 16)) {
 
           int w, h, x, y;
@@ -111,19 +112,17 @@ struct font * read_bdf (const char *file) {
              goto FAIL;
           overall_bitmap_height  = h;
           overall_bitmap_descent = y;
-
       } else if (!strncmp (buf, "ENCODING ", 9)) {
-
-          if (1 != sscanf (buf+9, "%d %c", &current_char, &dummy) &&
+         if (1 != sscanf (buf+9, "%d %c", &current_char, &dummy) &&
               current_char <= 255 &&
               current_char >= -1)
             goto FAIL;
-      }
-
-      else if (!strncmp (buf, "STARTCHAR", 9) || !strncmp (buf, "ENDCHAR", 7)) {
-
-          current_char = -1;
-
+         //if ((current_char >= MAX_CHARS ) || (current_char <= -1))
+         //if (current_char >= MAX_CHARS ) 
+         //   current_char = -1;
+      } else if (!strncmp (buf, "STARTCHAR", 9) ||
+                 !strncmp (buf, "ENDCHAR", 7)) {
+         current_char = -1;
       } else if (!strncmp (buf, "DWIDTH ", 7)) {
 
           int w;
@@ -133,7 +132,6 @@ struct font * read_bdf (const char *file) {
              font->chars[current_char].width = w;
 
       } else if (!strncmp (buf, "BBX ", 4)) {
-
           int w, h, x, y;
           struct ppm *ppm;
           if (4 != sscanf (buf+4, "%d %d %d %d %c", &w, &h, &x, &y, &dummy))
@@ -161,39 +159,38 @@ struct font * read_bdf (const char *file) {
                 fprintf (stderr, "%s: out of memory (%d x %d)\n",
                          progname, ppm->width, ppm->height);
                 exit (1);
-              }
-              font->chars[current_char].ppm = ppm;
+             }
+             font->chars[current_char].ppm = ppm;
           }
-
       } else if (!strncmp (buf, "BITMAP ", 4)) {
          int y, yoff;
 
+         if (current_char != -1) {
          if (font->chars[current_char].width == 0) {
             fprintf (stderr,
                      "%s: %s: %d: zero-width char ('%c') with bits?\n",
                      progname, file, line, current_char);
-            exit (1);
+            //exit (1);
          }
-
          yoff = ((overall_bitmap_height - current_char_height) +
-              + (overall_bitmap_descent - current_char_descent));
+                  + (overall_bitmap_descent - current_char_descent));
 
          if (yoff < 0 ||
             yoff + current_char_height - 1 >= overall_bitmap_height) {
 
             fprintf (stderr,
-                   "%s: %s: %d: char %d bbox is not contained in font bbox\n",
-                    progname, file, line,
-                    current_char);
+                     "%s: %s: %d: char %d bbox is not contained in font bbox\n",
+                     progname, file, line,
+                     current_char);
             exit (1);
+         }
          }
 
          for (y = 0; y < current_char_height; y++) {
-
             if (!fgets (buf, sizeof(buf)-1, in)) {
-                fprintf (stderr, "%s: %s: %d: premature EOF\n",
-                          progname, file, line);
-                exit (1);
+               fprintf (stderr, "%s: %s: %d: premature EOF\n",
+                         progname, file, line);
+               exit (1);
             }
 
             if (current_char > 0 && current_char <= 255) {
@@ -263,11 +260,16 @@ struct font * read_bdf (const char *file) {
                  !strncmp (buf, "ENDFONT", 7))  {
 
           /* ignore */
+          if (verbose) fprintf (stderr, "%s: %s: ignoring line %d: %s\n",
+                                progname, file, line, buf);
       } else {
-         FAIL:
-            fprintf (stderr, "%s: %s: %d: unparsable line: %s\n",
-                     progname, file, line, buf);
-            exit (1);
+        FAIL:
+          fprintf (stderr, "%s: %s: %d: unparsable line: %s\n",
+                   progname, file, line, buf);
+          exit (1);
+        //CONTINUE:
+        //  fprintf (stderr, "%s: %s: %d: char index %d > MAX_CHARS(%d): %c\n",
+        //           progname, file, line, current_char, MAX_CHARS);
       }
       line++;
    }

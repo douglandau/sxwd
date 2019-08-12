@@ -49,10 +49,10 @@ static char * read_ppm_line (FILE *in, char *buf, size_t size,
 
       (*lineP)++;
 
-      s = strchr(buf, '#');    // delete comments to end of line
+      s = strchr(buf, '#');    /* delete comments to end of line */
       if (s) {
-          s[0] = '\n';
-          s[1] = 0;
+         s[0] = '\n';
+         s[1] = 0;
       }
 
       s = buf;
@@ -61,7 +61,7 @@ static char * read_ppm_line (FILE *in, char *buf, size_t size,
          s++;
 
       if (*s != 0)
-        break;    /* non-blank line: return it.  Else read another. */
+         break;    /* non-blank line: return it.  Else read another. */
    }
    return buf;
 }
@@ -89,18 +89,18 @@ struct ppm * read_ppm (const char *file) {
    else {
       in = fopen (file, "r");
       if (!in) {
-          sprintf(buf, "%.255s: %.255s", progname, file);
-          perror(buf);
-          exit (1);
+         sprintf(buf, "%.255s: %.255s", progname, file);
+         perror(buf);
+         exit (1);
       }
    }
 
-   // header line
-   read_ppm_line (in, buf, sizeof(buf), file, &line, 1);
+   read_ppm_line (in, buf, sizeof(buf), file, &line, 1);  /* header line */
    if (buf[0] != 'P' ||
-       buf[1] < '1' ||
-       buf[1] > '6' ||
-       buf[2] != '\n') {
+      buf[1] < '1' ||
+      buf[1] > '6' ||
+      buf[2] != '\n') {
+
       fprintf (stderr, "%s: %s: not a PBM, PGM, or PPM file\n",
               progname, file);
       exit (1);
@@ -109,7 +109,6 @@ struct ppm * read_ppm (const char *file) {
    ppm->type = buf[1] - '0';
    if (ppm->type < 1 || ppm->type > 6)
       abort();
-  
 
    read_ppm_line (in, buf, sizeof(buf), file, &line, 1); /* width/height line */
 
@@ -118,7 +117,7 @@ struct ppm * read_ppm (const char *file) {
       fprintf (stderr, "%s: %s: %d: bogus PNM file: %s\n",
                progname, file, line, buf);
       exit (1);
-    }
+   }
 
    ppm->rgba = (unsigned char *)
       calloc (1, (ppm->width + 2) * (ppm->height + 2) * 4);
@@ -152,6 +151,7 @@ struct ppm * read_ppm (const char *file) {
       int tick = 0;
 
       while (read_ppm_line (in, buf, sizeof(buf), file, &line, 0)) {
+
          char *s = buf;
          while (*s && (*s != '\r' && *s != '\n')) {
             int any = 0;
@@ -471,15 +471,20 @@ void free_ppm (struct ppm *ppm) {
 }
 
 
+//
+//  get_pixel()
+//
 void get_pixel (struct ppm *ppm,
-                   int x, int y,
-              unsigned char *rP,
-              unsigned char *gP,
-              unsigned char *bP,
-              unsigned char *aP) {
+           int x, int y,
+           unsigned char *rP,
+           unsigned char *gP,
+           unsigned char *bP,
+           unsigned char *aP) {
 
-   if (x < 0 || x >= ppm->width || y < 0 || y >= ppm->height) {
-      *rP = *gP = *bP = *aP = 0;
+   if (x < 0 || x >= ppm->width ||
+       y < 0 || y >= ppm->height) {
+       *rP = *gP = *bP = *aP = 0;
+
    } else {
       unsigned char *p = ppm->rgba + (((y * ppm->width) + x) * 4);
       *rP = *p++;
@@ -526,6 +531,9 @@ void put_pixel (struct ppm *ppm,
 }
 
 
+//
+//  paste_ppm()
+//
 /* Paste part of one image into another, with all necessary clipping.
    Alpha controls the blending of the new image into the old image
     (and any alpha already in the new image is also taken into account.)
@@ -614,7 +622,6 @@ void paste_ppm (struct ppm *into, int to_x, int to_y, xwd *in_xwd,
 //  Returns a copy of the PPM, scaled larger or smaller.
 //  When scaling down, it dithers; when scaling up, it does not.
 //
-//
 struct ppm * scale_ppm (struct ppm *ppm, double scale) {
    int x, y;
    struct ppm *ppm2;
@@ -637,43 +644,43 @@ struct ppm * scale_ppm (struct ppm *ppm, double scale) {
 
    if (scale < 1.0)
       for (y = 0; y < ppm2->height; y++)
-         for (x = 0; x < ppm2->width; x++) {
-            int x1 = (int) ( (x - 0) / scale);
-            int x2 = (int)((x + 1) / scale);
-            int y1 = (int)((y - 0) / scale);
-            int y2 = (int)((y + 1) / scale);
-            int xx, yy;
-            int tr = 0, tg = 0, tb = 0, ta = 0;
-            int total_pixels = (x2-x1) * (y2-y1);
+        for (x = 0; x < ppm2->width; x++) {
+           int x1 = (int) ( (x - 0) / scale);
+           int x2 = (int)((x + 1) / scale);
+           int y1 = (int)((y - 0) / scale);
+           int y2 = (int)((y + 1) / scale);
+           int xx, yy;
+           int tr = 0, tg = 0, tb = 0, ta = 0;
+           int total_pixels = (x2-x1) * (y2-y1);
 
-            unsigned char *p = ppm2->rgba + (((y * ppm2->width) + x) * 4);
+           unsigned char *p = ppm2->rgba + (((y * ppm2->width) + x) * 4);
 
-            if (total_pixels <= 0)
-               continue;
+           if (total_pixels <= 0)
+              continue;
 
-         for (yy = y1; yy < y2; yy++)
-            for (xx = x1; xx < x2; xx++) {
-               unsigned char r, g, b, a;
-               get_pixel (ppm, (xx < 0 ? 0 : xx),
-                          (yy < 0 ? 0 : yy),
-                          &r, &g, &b, &a);
-               tr += r;
-               tg += g;
-               tb += b;
-               ta += a;
-            }
+           for (yy = y1; yy < y2; yy++)
+              for (xx = x1; xx < x2; xx++) {
+                 unsigned char r, g, b, a;
+                 get_pixel (ppm, (xx < 0 ? 0 : xx),
+                           (yy < 0 ? 0 : yy),
+                            &r, &g, &b, &a);
+                 tr += r;
+                 tg += g;
+                 tb += b;
+                 ta += a;
+              }
 
-         tr /= total_pixels;
-         tg /= total_pixels;
-         tb /= total_pixels;
-         ta /= total_pixels;
+          tr /= total_pixels;
+          tg /= total_pixels;
+          tb /= total_pixels;
+          ta /= total_pixels;
 
-         /* put_pixel would do the wrong thing with alpha here */
-         p[0] = tr;
-         p[1] = tg;
-         p[2] = tb;
-         p[3] = ta;
-      }
+          /* put_pixel would do the wrong thing with alpha here */
+          p[0] = tr;
+          p[1] = tg;
+          p[2] = tb;
+          p[3] = ta;
+       }
 
    else     /* scale > 1.0 */
 
@@ -681,24 +688,28 @@ struct ppm * scale_ppm (struct ppm *ppm, double scale) {
          for (x = 0; x < ppm2->width; x++) {
             unsigned char r, g, b, a;
             unsigned char *p = ppm2->rgba + (((y * ppm2->width) + x) * 4);
-            get_pixel (ppm,
-                       int((x + 0.5) / scale),
-                       int((y + 0.5) / scale),
-                       &r, &g, &b, &a);
+            get_pixel (ppm, int((x + 0.5) / scale),
+                            int((y + 0.5) / scale), &r, &g, &b, &a);
+
             /* put_pixel would do the wrong thing with alpha here */
             p[0] = r;
             p[1] = g;
             p[2] = b;
             p[3] = a;
          }
+
    return ppm2;
 }
 
 
+//
+//  blur_alpha_curve()
+//
 /* This is just the curve N^2.4 from 0.0-1.0, scaled to 0-256.
    We use this curve to emphasize the blur: it doesn't drop off linearly,
    but decays more sharply at the edges.
  */
+//
 static unsigned char blur_alpha_curve [256] = {
     0,   3,   5,   8,  10,  12,  15,  17,  19,  21,  24,  26,  28,  30,
    33,  35,  37,  39,  41,  44,  46,  48,  50,  52,  54,  56,  58,  60,
@@ -775,10 +786,10 @@ struct ppm * blur_ppm (struct ppm *ppm, int radius) {
                   get_pixel (ppm, xx, yy, &r, &g, &b, &a);
                else
                   r = g = b = a = 0;
-                  tr += r;
-                  tg += g;
-                  tb += b;
-                  ta += a;
+               tr += r;
+               tg += g;
+               tb += b;
+               ta += a;
             }
 
          tr /= total_pixels;
@@ -789,13 +800,12 @@ struct ppm * blur_ppm (struct ppm *ppm, int radius) {
          if (ta > 255) abort();
          ta = blur_alpha_curve[ta];
 
-         /* put_pixel would do the wrong thing with alpha here */
+         // put_pixel would do the wrong thing with alpha here 
          p[0] = tr;
          p[1] = tg;
          p[2] = tb;
          p[3] = ta;
       }
    }
-
    return ppm2;
 }

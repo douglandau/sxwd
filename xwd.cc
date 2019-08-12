@@ -25,18 +25,22 @@ unsigned long swaptest = 1;
 //  Constructor
 //
 xwd::xwd (const char *in_name) { 
-    image = NULL; colors = NULL; ncolors = 0; header = NULL;
-    name = new char [strlen(in_name)+1];
-    strcpy (name, in_name);
-    font = new char [strlen(DEFAULT_FONT)+1];
-    strcpy (font, DEFAULT_FONT);
-    fontPath = new char [strlen(DEFAULT_FONT_PATH)+1];
-    strcpy (fontPath, DEFAULT_FONT_PATH);
-    fontDPI = new char[256]; 
-    sprintf (fontDPI, "misc");
-    ReadXWD(0);
-    verbose = 0;
+   image = NULL; colors = NULL; ncolors = 0; header = NULL;
+   name = new char [strlen(in_name)+1];
+   strcpy (name, in_name);
+   font = new char [strlen(DEFAULT_FONT)+1];
+   strcpy (font, DEFAULT_FONT);
+   fontPath = new char [strlen(DEFAULT_FONT_PATH)+1];
+   strcpy (fontPath, DEFAULT_FONT_PATH);
+   fontDPI = new char[strlen(DEFAULT_FONT_DPI)+1]; 
+   sprintf (fontDPI, "%s", DEFAULT_FONT_DPI);
+
+   family = NULL;
+   pt = NULL;
+   style = NULL;
+   ReadXWD(0);
 }
+
 
 //
 //  Constructor with no name
@@ -49,8 +53,11 @@ xwd::xwd () {
    strcpy (font, DEFAULT_FONT);
    fontPath = new char [strlen(DEFAULT_FONT_PATH)+1];
    strcpy (fontPath, DEFAULT_FONT_PATH);
-   fontDPI = new char[256]; 
-   sprintf (fontDPI, "misc");
+   fontDPI = new char[strlen(DEFAULT_FONT_DPI)+1]; 
+   sprintf (fontDPI, "%s", DEFAULT_FONT_DPI);
+   family = NULL;
+   pt = NULL;
+   style = NULL;
 
    //  Since we are not going to read it in, initialize it to 
    //  having two colors and being 8x8 and fill it with white
@@ -62,6 +69,8 @@ xwd::xwd () {
 //
 xwd::~xwd () { 
     if (font) delete font;
+    if (pt) delete pt;
+    if (family) delete family;
     if (fontDPI) delete fontDPI;
     if (fontPath) delete fontPath;
     if (colors) delete colors;
@@ -93,16 +102,16 @@ void xwd::SetPath (char *newpath) {
 void xwd::SetFont (char *newfont) {
     if (!newfont) return;
     if (font) delete font;
-    font= new char [strlen(newfont)+1];
+    font = new char [strlen(newfont)+1];
     strcpy (font, newfont);
 }
 
-//  SetFont sets the font
-void xwd::SetFontPath (char *newpath) {
-    if (!newpath) return;
+//  SetFontPath sets the path to the fonts
+void xwd::SetFontPath (char *newfontpath) {
+    if (!newfontpath) return;
     if (fontPath) delete fontPath;
-    fontPath = new char [strlen(newpath)+1];
-    strcpy (fontPath, newpath);
+    fontPath = new char [strlen(newfontpath)+1];
+    strcpy (fontPath, newfontpath);
 }
 
 //  SetFontDPI sets the fontDPI
@@ -113,9 +122,63 @@ void xwd::SetFontDPI (char *newdpi) {
     strcpy (fontDPI, newdpi);
 }
 
+//  SetFontFamily sets the font family
+void xwd::SetFontFamily (char *newfam) {
+    if (!newfam) return;
+    if (family) delete family;
+    family = new char [strlen(newfam)+1];
+    strcpy (family, newfam);
+    if (!strcasecmp(family,"courier")) sprintf (family, "%s", "cour");
+    if (!strcasecmp(family,"character")) sprintf (family, "%s", "char");
+    if (!strcasecmp(family,"lucida")) sprintf (family, "%s", "lu");
+
+    if (!strcasecmp(family,"helvetica")) sprintf (family, "%s", "helv");
+
+    if ((!strcasecmp(family,"lucidabright")) ||
+        (!strcasecmp(family,"lucida bright"))) sprintf (family, "%s", "lub");
+
+    if (!strcasecmp(family,"newcentury") ||
+        !strcasecmp(family,"new century ") ||
+        !strcasecmp(family,"new century")) sprintf (family, "%s", "ncen");
+
+    if (!strcasecmp(family,"times")) sprintf (family, "%s", "tim");
+
+    if (family && style && pt) {
+       if (font) delete font;
+       font = new char[strlen(family)+strlen(style)+strlen(pt)+1];
+       sprintf (font, "%s%s%s.bdf", family, style, pt);
+   }
+}
+
+
+//  SetFontPT sets the font point size
+void xwd::SetFontPT (char *newpt) {
+    if (!newpt) return;
+    if (pt) delete pt;
+    pt = new char [strlen(newpt)+1];
+    strcpy (pt, newpt);
+    if (family && style && pt) {
+       if (font) delete font;
+       font = new char[strlen(family)+strlen(style)+strlen(pt)+1];
+       sprintf (font, "%s%s%s.bdf", family, style, pt);
+   }
+}
+
+//  SetFontStyle sets the font style
+void xwd::SetFontStyle (char *newStyle) {
+    if (!newStyle) return;
+    if (style) delete style;
+    style = new char [strlen(newStyle)+1];
+    strcpy (style, newStyle);
+    if (family && style && pt) {
+       if (font) delete font;
+       font = new char[strlen(family)+strlen(style)+strlen(pt)+1];
+       sprintf (font, "%s%s%s.bdf", family, style, pt);
+   }
+}
 
 //
-//  ListPath()
+//  Recursively list all the files in the tree with specified root
 //
 int xwd::ListPath (char *path) {
 
@@ -192,7 +255,9 @@ int xwd::ShowFonts () {
     return 0;
 }
 
+//
 //  GetClosestColor takes in rgb values from 0 - 255
+//
 int xwd::GetClosestColor (int r, int g, int b) {
     int	i, j, closest=0;
     double best=0.0;
@@ -219,7 +284,9 @@ int xwd::GetClosestColor (int r, int g, int b) {
     return closest;
 }
 
+//
 //  Dump the contents of the cmap
+//
 void xwd::DumpCmap (int cells) {
     int	i, j, closest, distance;
 
@@ -236,7 +303,9 @@ void xwd::DumpCmap (int cells) {
 	
 }
 
+//
 //  takes in rgb values from 0 - 255
+//
 int xwd::GetFarthestColor (int r, int g, int b) {
     int	i, j, farthest, distance;
 
@@ -251,7 +320,9 @@ int xwd::GetFarthestColor (int r, int g, int b) {
     return farthest;
 }
 
+//
 //  mapTo remaps a xwd's cmap to that of toMe as necessary
+//
 void xwd::MapTo (xwd *toMe) {
     unsigned char        *map;
     XColor		*newColors;
@@ -336,7 +407,9 @@ void xwd::MapTo (xwd *toMe) {
     delete distances;
 }
 
+//
 //  HasColor returns 1 if the color exists in the colormap or else 0
+//
 int xwd::HasColor (XColor *hasMe) {
     XColor	*newcolors;
 	int i;
@@ -526,7 +599,9 @@ int xwd::SetWhitePixel (Pixel pix) {
     return 0;
 }
 
+//
 //  blackPixel sets the blackPixel to the given value
+//
 int xwd::SetBlackPixel (Pixel pix) {
     if (pix >= ncolors) return -1;
     blackPixel = pix;
@@ -539,7 +614,7 @@ int xwd::SetBlackPixel (Pixel pix) {
 //
 //  SwapBW swaps BlackPixel and whitePixel and remaps the pixels
 //
-//  Usually blackPixel is 0 and whitePixel is 1.  If an image comes
+//  Usually blackPixel is 0 and whitePixel is 1.  If an image comes 
 //  along that has white at 0 and black at 1, it might best to straighten
 //  it out before going any further with it
 //
@@ -561,7 +636,9 @@ int xwd::SwapBW () {
    return 0;
 }
 
+//
 //  SetForeground sets the foreround to the given pixel value
+//
 int xwd::SetForeground (Pixel pix) {
     if (pix >= ncolors) return -1;
     fg = pix; 		return 0;
@@ -1081,7 +1158,11 @@ void xwd::DumpLine (int line) {
 }
 
 
+//
+//  DrawString()
+//
 //  alignment is LEFT RIGHT or CENTER
+//
 void xwd::DrawString(char *text, int x, int y, int alignment) {
 	struct font *f = 0;
 

@@ -18,83 +18,88 @@ Bool 		debug=False, verbose=False;
 char 		*progname;
 
 
-
+//
+//  Usage()
+//
+//  Usage takes an optional specific message
+//
 void usage(const char *msg) {
 
    // if there is a specific error message and it looks valid, print that
    // otherwise print general message
    if ((msg) && (msg[0] != '\0')) {
-    fprintf (stderr, "\n%s\n\n", msg);
+      fprintf (stderr, "\n%s\n\n", msg);
    } else {
-    fprintf (stderr, "\n");
-    fprintf (stderr, "usage:  %s [ options ] -in <filename> [ options ] [ -write ]\n\n",progname);
-    fprintf(stderr, "Where options are:\n");
-    fprintf(stderr, "   [-addcolor <color name> ] \n");
-    fprintf(stderr, "   [-bg white|black|0..255 ] \n");
-    fprintf(stderr, "   [-blackPixel] \n");
-    fprintf(stderr, "   [-border] \n");
-    fprintf(stderr, "   [-bw] \n");
-    fprintf(stderr, "   [-c16 \n");
-    fprintf(stderr, "   [-clear \n");
-    fprintf(stderr, "   [-clip|-crop ] \n");
-    fprintf(stderr, "   [-cmap ] \n");
-    fprintf(stderr, "   [-debug ] \n");
-    fprintf(stderr, "   [-dpi <DPI> ] \n");
-    fprintf(stderr, "   [-dump ] \n");
-    fprintf(stderr, "   [-dumpLine ] \n");
-    fprintf(stderr, "           [-fg black|white|0..255 ] \n");
-    fprintf(stderr, "           [-family <family> ] \n");
-    fprintf(stderr, "           [-font <font name>] \n");
-    fprintf(stderr, "           [-fill x1 y1 x2 y2 ]\n");
-    fprintf(stderr, "           [-fontPath <path> ] \n");
-    fprintf(stderr, "           [-get 0..255 ] \n");
-    fprintf(stderr, "           [-gz ] \n");
-    fprintf(stderr, "           [-halve ] \n");
-    fprintf(stderr, "           [-header ] \n");
-    fprintf(stderr, "           [-help ] \n");
-    fprintf(stderr, "           [-image ] \n");
-    fprintf(stderr, "           [-info ] \n");
-    fprintf(stderr, "           [-in <filename>\n");
-    fprintf(stderr, "           [-line x1 y1 x2 y2 ]\n");
-    fprintf(stderr, "           [-lscolors ]\n");
-    fprintf(stderr, "           [-lsfonts ]\n");
-    fprintf(stderr, "           [-map <filename> ]\n");
-    fprintf(stderr, "           [-out <filename> ]\n");
-    fprintf(stderr, "           [-over15 ] \n");
-    fprintf(stderr, "           [-name <filename> ] \n");
-    fprintf(stderr, "           [-path <path> ]\n");
-    fprintf(stderr, "           [-patch <filename> ]\n");
-    fprintf(stderr, "           [-patchCentered <filename> ]\n");
-    fprintf(stderr, "           [-pt <point size> ] \n");
-    fprintf(stderr, "           [-put pixel r g b ] \n");
-    fprintf(stderr, "           [-rect x1 y1 x2 y2 ]\n");
-    fprintf(stderr, "           [-resize w h ]\n");
-    fprintf(stderr, "           [-sample ]\n");
-    fprintf(stderr, "           [-scale <factor> ]\n");
-    fprintf(stderr, "           [-set ] \n");
-    fprintf(stderr, "           [-shrink ] \n");
-    fprintf(stderr, "           [-squish ] \n");
-    fprintf(stderr, "           [-style <font style> ] \n");
-    fprintf(stderr, "           [-swapBW ] \n");
-    fprintf(stderr, "           [-text <sometext> ] \n");
-    fprintf(stderr, "           [-trim <side> ] \n");
-    fprintf(stderr, "           [-trimLeft ] \n");
-    fprintf(stderr, "           [-trimRight ] \n");
-    fprintf(stderr, "           [-trimTop ] \n");
-    fprintf(stderr, "           [-trimBottom ] \n");
-    fprintf(stderr, "           [-trunc <0..255> ] \n");
-    fprintf(stderr, "           [-use4 ] \n");
-    fprintf(stderr, "           [-use8 ] \n");
-    fprintf(stderr, "           [-verbose ] \n");
-	 fprintf(stderr, "           [-whitePixel ] \n");
-    fprintf(stderr, "           [-write ] \n");
-    fprintf(stderr, "           [-x ] \n");
-    fprintf(stderr, "           [-x1 ] \n");
-    fprintf(stderr, "           [-x2 ] \n");
-    fprintf(stderr, "           [-y ] \n");
-    fprintf(stderr, "           [-y2 ] \n");
-    fprintf(stderr, "           [-y2 ] \n");
-    fprintf(stderr, "\n");
+      fprintf (stderr, "\n");
+      fprintf (stderr, "usage:  %s [ options ] -in <filename> [ options ] [ -write ]\n\n",progname);
+      fprintf(stderr, "Where options are:\n");
+      fprintf(stderr, "    [-addcolor <color name> ] \n");
+      fprintf(stderr, "    [-bg white|black|0..255 ] \n");
+      fprintf(stderr, "    [-blackPixel <pixel>] \n");
+      fprintf(stderr, "    [-border] \n");
+      fprintf(stderr, "    [-bw] \n");
+      fprintf(stderr, "    [-c16 \n");
+      fprintf(stderr, "    [-clear \n");
+      fprintf(stderr, "    [-clip|-crop ] \n");
+      fprintf(stderr, "    [-cmap ] \n");
+      fprintf(stderr, "    [-debug ] \n");
+      fprintf(stderr, "    [-dpi <DPI> ] \n");
+      fprintf(stderr, "    [-dump ] \n");
+      fprintf(stderr, "    [-dumpLine ] \n");
+      fprintf(stderr, "    [-fg black|white|0..255 ] \n");
+      fprintf(stderr, "    [-family <family> ] \n");
+      fprintf(stderr, "    [-font <font name>] \n");
+      fprintf(stderr, "    [-fill x1 y1 x2 y2 ]\n");
+      fprintf(stderr, "    [-fontPath <path> ] \n");
+      fprintf(stderr, "    [-get 0..255 ] \n");
+      fprintf(stderr, "    [-gz ] \n");
+      fprintf(stderr, "    [-halve ] \n");
+      fprintf(stderr, "    [-header ] \n");
+      fprintf(stderr, "    [-help ] \n");
+      fprintf(stderr, "    [-image ] \n");
+      fprintf(stderr, "    [-info ] \n");
+      fprintf(stderr, "    [-in <filename>\n");
+      fprintf(stderr, "    [-line x1 y1 x2 y2 ]\n");
+      fprintf(stderr, "    [-lscolors ]\n");
+      fprintf(stderr, "    [-lsfonts ]\n");
+      fprintf(stderr, "    [-map <filename> ]\n");
+      fprintf(stderr, "    [-out <filename> ]\n");
+      fprintf(stderr, "    [-over15 ] \n");
+      fprintf(stderr, "    [-name <filename> ] \n");
+      fprintf(stderr, "    [-new <filename> ] \n");
+      fprintf(stderr, "    [-path <path> ]\n");
+      fprintf(stderr, "    [-patch <filename> ]\n");
+      fprintf(stderr, "    [-patchCentered <filename> ]\n");
+      fprintf(stderr, "    [-pt <point size> ] \n");
+      fprintf(stderr, "    [-put pixel r g b ] \n");
+      fprintf(stderr, "    [-rect x1 y1 x2 y2 ]\n");
+      fprintf(stderr, "    [-resize w h ]\n");
+      fprintf(stderr, "    [-sample ]\n");
+      fprintf(stderr, "    [-scale <factor> ]\n");
+      fprintf(stderr, "    [-set ] \n");
+      fprintf(stderr, "    [-shrink ] \n");
+      fprintf(stderr, "    [-squish ] \n");
+      fprintf(stderr, "    [-style <font style> ] \n");
+      fprintf(stderr, "    [-swapBW ] \n");
+      fprintf(stderr, "    [-text <sometext> ] \n");
+      fprintf(stderr, "    [-trim <side> ] \n");
+      fprintf(stderr, "    [-trimLeft ] \n");
+      fprintf(stderr, "    [-trimRight ] \n");
+      fprintf(stderr, "    [-trimTop ] \n");
+      fprintf(stderr, "    [-trimBottom ] \n");
+      fprintf(stderr, "    [-trunc <0..255> ] \n");
+      fprintf(stderr, "    [-use4 ] \n");
+      fprintf(stderr, "    [-use8 ] \n");
+      fprintf(stderr, "    [-verbose ] \n");
+	   fprintf(stderr, "    [-whitePixel <pixel> ] \n");
+      fprintf(stderr, "    [-write ] \n");
+      fprintf(stderr, "    [-x ] \n");
+      fprintf(stderr, "    [-x1 ] \n");
+      fprintf(stderr, "    [-x2 ] \n");
+      fprintf(stderr, "    [-y ] \n");
+      fprintf(stderr, "    [-y2 ] \n");
+      fprintf(stderr, "    [-y2 ] \n");
+      fprintf(stderr, "\n");
    }
    exit(1);
 }
@@ -103,15 +108,14 @@ int main (int argc, char **argv) {
     int 		i, j, n, r, c, x=0, y=0;
     int 		x1, y1, x2, y2;
     unsigned 	buffer_size;
-    int 		win_name_size=0, numImages=0;
-    char 	*fileName=NULL, *outName=NULL, *mapName=NULL, *font=NULL;
+    char 	*fileName=NULL, *outName=NULL, *mapName=NULL;
     char 	*patchName=NULL, *patchCenteredName=NULL, *bustout=NULL;
     int 		cell=-1;
-    char 	*win_name=NULL, *text=NULL, *fontPath=NULL, *fontDPI=NULL;
     XWDColor 	xwdcolor;
-    xwd 		*in, *map;
+    xwd 		*in=0, *map;
     char  	*border=NULL, *newName=NULL, *newPath=NULL, *addColor=NULL;
-    char  	*family=NULL, *pt=NULL, *style=NULL, *dpi=NULL;
+    char 	*text=NULL, *font=NULL, *fontPath=NULL, *fontDPI=NULL;
+    char  	*family=NULL, *pt=NULL, *style=NULL;
     char  	*fg=NULL, *bg=NULL;
     int		wp=-1, bp=-1, alignment=LEFT, w, h;
     int 		newred=-1, newgreen=-1, newblue=-1, ncolors=-1;
@@ -128,11 +132,8 @@ int main (int argc, char **argv) {
 		if (strcasecmp(argv[i], "-alignment") == 0) { 
 		    if (++i >= argc) usage("");
 		    if (strcasecmp(argv[i],"LEFT")==0) alignment = LEFT;
-		    if (strcasecmp(argv[i],"left")==0) alignment = LEFT;
 		    if (strcasecmp(argv[i],"CENTER")==0) alignment = CENTER;
-		    if (strcasecmp(argv[i],"center")==0) alignment = CENTER;
 		    if (strcasecmp(argv[i],"RIGHT")==0) alignment = RIGHT;
-		    if (strcasecmp(argv[i],"right")==0) alignment = RIGHT;
 		    continue;
 		}
 		if (strcasecmp(argv[i], "-bg") == 0) { 
@@ -142,7 +143,9 @@ int main (int argc, char **argv) {
 				if (strcasecmp(bg,"white")==0) in->SetBackground(in->whitePixel);
 				else if (strcasecmp(bg,"black")==0) in->SetBackground(in->blackPixel);
 				else in->SetBackground(atoi(bg));
-			}
+			} else {
+           // to be completed; 
+         }
 			continue;
 		}
 		if (strcasecmp(argv[i], "-border") == 0) { 
@@ -154,8 +157,7 @@ int main (int argc, char **argv) {
 	    	in->MakeBW();
 			continue;
 		}
-		if ((strcasecmp(argv[i], "-clip") == 0) || 
-	  		 (strcasecmp(argv[i], "-crop")) == 0) { 
+		if ((!strcasecmp(argv[i], "-clip")) || (!strcasecmp(argv[i], "-crop"))) { 
 		   x1 = atoi(argv[++i]); y1 = atoi(argv[++i]); 	
 			x2 = atoi(argv[++i]); y2 = atoi(argv[++i]); 	
 	   	in->Crop (x1,y1,x2,y2); 
@@ -163,6 +165,7 @@ int main (int argc, char **argv) {
 		}
 		if ((strcasecmp(argv[i], "-check") == 0) ||
 	  		 (strcasecmp(argv[i], "-info")) == 0) { 
+			if (!in) usage ("No file specified.\n");
 	      int count = 0, siz = in->image->width * in->image->height;
 	      printf ("wxh: %dx%d, ncolors: %d, header->ncolors: %d, unique colors: %d\n", 
 				in->image->width, in->image->height, in->ncolors, in->header->ncolors, in->Uniq()); 
@@ -176,8 +179,11 @@ int main (int argc, char **argv) {
 				if ((unsigned char)in->image->data[j] > 15)
 		    		count++;
 	      printf("found %d pixels over 15\n", count);
-	      printf("fontPath: %s\n", in->fontPath);
-	      printf("fontDPI: %s\n", in->fontDPI);
+	      printf("font path: %s\n", in->fontPath);
+	      printf("font DPI: %s\n", in->fontDPI);
+	      printf("font family: %s\n", in->family);
+	      printf("font style: %s\n", in->style);
+	      printf("font point size: %s\n", in->pt);
 	      printf("font: %s\n", in->font);
 			continue;
 		}
@@ -194,7 +200,8 @@ int main (int argc, char **argv) {
 			continue;
 		}
 		if (strcasecmp(argv[i], "-debug") == 0) { 
-	   	in->debug = 1;
+	   	debug = 1;
+	   	if (in) in->debug = 1;
 			continue;
 		}
 		if (strcasecmp(argv[i], "-dump") == 0) { 
@@ -205,10 +212,14 @@ int main (int argc, char **argv) {
 	    	in->DumpLine(0); 
 			continue;
 		}
-		if (strcasecmp(argv[i], "-dpi") == 0) {
-		   if (++i >= argc) usage("DPI value expected.");
-		   dpi = argv[i]; 	
-	    	in->SetFontDPI (dpi); 
+		if ((strcasecmp(argv[i], "-dpi") == 0) ||
+		    (strcasecmp(argv[i], "-fontDPI") == 0)) {
+		   if (++i >= argc) usage("No DPI specified.");
+		   char *fdpi = argv[i]; 	
+         if (fontDPI) delete fontDPI;
+		   fontDPI = new char[strlen(fdpi)+1];
+		   sprintf (fontDPI, "%s", fdpi);
+		   if (in) in->SetFontDPI(fontDPI);
 			continue;
 	   }
 		if (strcasecmp(argv[i], "-fg") == 0) { 
@@ -230,15 +241,17 @@ int main (int argc, char **argv) {
 			continue;
 		}
 		if (strcasecmp(argv[i], "-family") == 0) {
-		   if (++i >= argc) usage("No family specified.");
-		   family = argv[i]; 		
-	      char *newfont = new char [256];
-			sprintf (newfont, "%s%s%s.bdf", family, style, pt);
-	    	in->SetFont(newfont);
+		   if (++i >= argc) usage("No font family specified.");
+		   char *fm = argv[i]; 		
+         if (family) delete family;
+	      family = new char [strlen(fm)+1];
+			sprintf (family, "%s", fm);
+	    	if (!strcasecmp(family,"times")) sprintf (family, "%s", "tim");
+	    	if (in) in->SetFontFamily(family);
 			continue;
 		}
 		if (strcasecmp(argv[i], "-fill") == 0) {
-		   if (i+4 >= argc) usage("No fill color specified.");
+		   if (i+4 >= argc) usage("No x1 y1 x2 y2 specified.");
 		   x1 = atoi(argv[++i]); y1 = atoi(argv[++i]); 	
          x2 = atoi(argv[++i]); y2 = atoi(argv[++i]); 		
 	   	in->Fill (x1,y1,x2,y2); 
@@ -246,25 +259,38 @@ int main (int argc, char **argv) {
 		}
 		if (strcasecmp(argv[i], "-font") == 0) {
 	    	if (++i >= argc) usage("No font name specified.");
-	    	font = argv[i]; 
-			if (strstr(font,"bdf")) { 
-		   	in->SetFont(font); 
+	    	char *fn = argv[i]; 
+	    	char *fname;
+         // does the font name given end in .bdf?  if not fix it
+			if (strstr(fn,".bdf")) { 
+		   	fname = new char[strlen(fn)+1];
+		   	sprintf (fname, "%s", fn);
 			} else {
-		   	char *s = new char(strlen(font)+8);
-		   	sprintf (s, "%s.bdf", font);
-		   	in->SetFont(s); 
-			}
+		   	fname = new char(strlen(fn)+8);
+		   	sprintf (fname, "%s.bdf", fn);
+         }
+         if (font) delete font;
+         font = fname;
+		   if (in) in->SetFont(fname);
+         delete fname;
 			continue;
 		}
 		if (strcasecmp(argv[i], "-fontDPI") == 0) {
 		   if (++i >= argc) usage("No DPI specified.");
-		   font = argv[i]; 	
+		   char *fdpi = argv[i]; 	
+         if (fontDPI) delete fontDPI;
+		   fontDPI = new char[strlen(fdpi)+1];
+		   sprintf (fontDPI, "%s", fdpi);
+		   if (in) in->SetFontDPI(fontDPI);
 			continue;
 		}
 		if (strcasecmp(argv[i], "-fontPath") == 0) {
 		   if (++i >= argc) usage("No font path specified.");
-		   fontPath = argv[i]; 	
-	     	in->SetFontPath (fontPath); 
+         char *fpath = argv[i];
+         if (fontPath) delete fontPath;
+         fontPath = new char [strlen(fpath)+1];
+		   sprintf (fontPath, "%s", fpath);
+	     	if (in) in->SetFontPath (fontPath); 
 			continue;
 		}
 		if (strcasecmp(argv[i], "-showFontPath") == 0) {
@@ -325,6 +351,12 @@ int main (int argc, char **argv) {
 		if ((strcasecmp(argv[i], "-lsfonts") == 0) ||
 		    (strcasecmp(argv[i], "-listFonts") ==0) ||
 		    (strcasecmp(argv[i], "-showFonts")) == 0) {
+			if (!in) { 
+            in = new xwd(); 
+            in->debug=debug;
+            in->verbose=verbose; 
+            in->SetFontPath(fontPath); 
+         }
 			in->ShowFonts();
 			continue;
 		}
@@ -414,10 +446,11 @@ int main (int argc, char **argv) {
 		}
 		if (strcasecmp(argv[i], "-pt") == 0) {
 		   if (++i >= argc) usage("-pt requires point size");
-		   pt = argv[i]; 
-	      char *newfont = new char [256];
-			sprintf (newfont, "%s%s%s.bdf", family, style, pt);
-	    	in->SetFont(newfont);
+		   char *ptsz = argv[i]; 
+         if (pt) delete pt;
+         pt = new char [strlen(ptsz)+1];
+			sprintf (pt, "%s", ptsz);
+	    	if (in) in->SetFontPT(pt);
 			continue;
 		}
 		if (strcasecmp(argv[i], "-rect") == 0) {
@@ -429,7 +462,7 @@ int main (int argc, char **argv) {
 			continue;
 		}
 		if (strcasecmp(argv[i], "-resize") == 0) {
-		   if (i+2 >= argc) usage("-resize requires width and height");
+		   if (i+2 >= argc) usage("-resize must be followed by w h did you say wxh?");
 		   w = atoi(argv[++i]); 
 		   h = atoi(argv[++i]); 		
 	   	in->Resize (w,h); 
@@ -477,10 +510,11 @@ int main (int argc, char **argv) {
 		}
 		if (strcasecmp(argv[i], "-style") == 0) {
 		   if (++i >= argc) usage("No syle specified.");
-		   style = argv[i]; 
-	      char *newfont = new char [256];
-			sprintf (newfont, "%s%s%s.bdf", family, style, pt);
-	    	in->SetFont(newfont);
+		   char *st = argv[i]; 
+         if (style) delete style;
+	      style = new char [strlen(st)+1];
+			sprintf (style, "%s", st);
+	    	if (in) in->SetFontStyle(style);
 			continue;
 		}
 		if (strcasecmp(argv[i], "-text") == 0) {
@@ -509,11 +543,11 @@ int main (int argc, char **argv) {
 			continue;
 		}
 		if (strcasecmp(argv[i], "-trimTop") == 0) {
-	    	in->TrimTop(); 
+	    	if (in) in->TrimTop(); 
 			continue;
 		}
 		if (strcasecmp(argv[i], "-trimBottom") == 0) {
-	    	in->TrimBottom(); 
+	    	if (in) in->TrimBottom(); 
 			continue;
 		}
 		if (strcasecmp(argv[i], "-trunc") == 0) {
@@ -528,18 +562,19 @@ int main (int argc, char **argv) {
 			continue;
 		}
 		if (strcasecmp(argv[i], "-use4") == 0) {
-	    	in->Use4();
+	    	if (in) in->Use4();
 			continue;
 		}
 		if (strcasecmp(argv[i], "-uniq") == 0) {
 			continue;
 		}
 		if (strcasecmp(argv[i], "-use8") == 0) {
-	    	in->Use8();
+	    	if (in) in->Use8();
 			continue;
 		}
 		if (strcasecmp(argv[i], "-verbose") == 0) {
-			in->verbose = 1;
+			verbose = 1;
+			if (in) in->verbose = 1;
 			continue;
 		}
 	   if (strcasecmp(argv[i], "-write") == 0) {
@@ -577,7 +612,9 @@ int main (int argc, char **argv) {
 		   y2 = atoi(argv[i]); 		
 			continue;
 		}
-		usage("");
+      char *temp = new char [256];
+		sprintf(temp, "%s: Word %s not recognized\n", progname, argv[i]);
+		usage(temp);
 	}
    //if (!fileName) usage("");
     

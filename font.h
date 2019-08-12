@@ -24,7 +24,8 @@
 #define CENTER 0
 #define RIGHT -1
 
-#define MAX_CHARS SHRT_MAX
+// #define MAX_CHARS SHRT_MAX
+#define MAX_CHARS 256
 
 struct font_char {
    int lbearing;  /* origin to left edge of raster */
@@ -55,6 +56,10 @@ extern struct font *read_bdf (const char *filename);
 //  Copies the font and the PPMs in it 
 //
 struct font * copy_font (struct font *font);
+
+//
+//  free_font()
+//
 extern void free_font (struct font *font);
 
 
@@ -88,16 +93,14 @@ extern void scale_font (struct font *font, double scale);
 //
 extern void halo_font (struct font *font, int radius);
 
-extern void setVerbose (int);
+// Write info on stdout
+extern void setVerbose (Bool);
 
-/* Write debugging info on stderr. */
-=======
 //
 //  dump_font()
 //
 //  Write debugging info on stderr
 //
->>>>>>> refs/remotes/origin/master
 extern void dump_font (struct font *font, int which_char);
 
 #endif /* __FONT_BDF__ */

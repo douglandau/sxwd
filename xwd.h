@@ -10,7 +10,7 @@
 
 #define MAXLN 512		// longest line of input text we allow
 
-#define NEW_IMAGE_NAME "new"
+#define NEW_IMAGE_NAME "new.xwd"
 #define DEFAULT_FONT "6x9.bdf"
 #define DEFAULT_FONT_DPI "misc"
 #define DEFAULT_FONT_PATH "/usr/local/share/fonts"  // where we install bdfs
@@ -21,6 +21,7 @@
 
 typedef 	unsigned long 	Pixel;
 typedef 	unsigned short 	Color;
+
 
 class xwd {
    public:
@@ -86,23 +87,29 @@ class xwd {
 		void 		SetPath (char *);
 		void 		SetFont (char *);
 		void 		SetFontPath (char *);
-		int 		ShowFonts ();
-		int 		ListPath (char *);
+		void 		SetFontFamily (char *);
+		void 		SetFontStyle (char *);
+		void 		SetFontPT (char *);
 		void 		SetFontDPI (char *);
 		void 		SetPenWidth (unsigned long setting) {penWidth=setting;}
 		int 		GetClosestColor (int r, int g, int b);
 		int 		GetFarthestColor (int r, int g, int b);
+
+		int 		ShowFonts ();
+		int 		ListPath (char *);
 	
-		void 				SetVerbose (Bool setting) {verbose = setting;};
+		//void 				SetVerbose (Bool setting) {verbose = setting;};
 		void 				Error (const char *);
 	
-		char 				*name, *path, *indx, *font, *fontPath, *fontDPI;
+		char 				*name, *path;
 		XImage 			*image;
 		XWDFileHeader 	*header;
 		XColor 			*colors;
 		int 				ncolors;
-		Bool 				debug=False, verbose=False, writeGzipped;
 		unsigned long	whitePixel, blackPixel, fg, bg, penWidth;
+
+		char 				*font, *fontPath, *fontDPI, *family, *pt, *style;
+		Bool 				debug, verbose, writeGzipped;
 	
 	private:
 		Bool 		Read (char *ptr, int size, int nitems, FILE *stream);
@@ -112,6 +119,7 @@ class xwd {
 	static void 	_swapshort (char *, unsigned);
 	static void 	_swaplong (char *, unsigned);
 };
+
 	
 #define sameColor(c1, c2) ((c1.red == c2.red) && \
 			    (c1.green == c2.green) && \
